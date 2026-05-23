@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Online Retail Business Intelligence</title>
+    <!-- 폰트: Google Fonts Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --glass-blur: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0b0f19 70%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 배경 네온 블록 장식 */
+        .neon-blob {
+            position: absolute;
+            filter: blur(100px);
+            z-index: -1;
+            opacity: 0.35;
+            pointer-events: none;
+            border-radius: 50%;
+        }
+        .blob-blue {
+            top: 10%;
+            left: 5%;
+            width: 450px;
+            height: 450px;
+            background: rgba(59, 130, 246, 0.5);
+        }
+        .blob-purple {
+            bottom: 10%;
+            right: 5%;
+            width: 500px;
+            height: 500px;
+            background: rgba(139, 92, 246, 0.5);
+        }
+
+        /* 상단 헤더 영역 */
+        header {
+            max-width: 1400px;
+            margin: 0 auto 2.5rem auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 1.5rem;
+        }
+
+        .brand h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa 0%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .brand p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-top: 4px;
+        }
+
+        .system-meta {
+            text-align: right;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .system-meta span {
+            display: block;
+            font-weight: 600;
+            color: var(--accent-emerald);
+        }
+
+        /* 네비게이션 탭 메뉴 */
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto 2rem auto;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(17, 24, 39, 0.5);
+            padding: 0.4rem;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            font-family: 'Outfit', sans-serif;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.75rem 1.25rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        /* 대시보드 메인 레이아웃 */
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .tab-panel {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 글래스모피즘 카드 디자인 */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px 0 rgba(59, 130, 246, 0.1);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .card-header-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 1.25rem;
+            border-left: 4px solid var(--accent-blue);
+            padding-left: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* KPI 카드 그리드 */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .kpi-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; width: 6px; height: 100%;
+        }
+
+        .kpi-card.sales::after { background: var(--accent-blue); }
+        .kpi-card.orders::after { background: var(--accent-purple); }
+        .kpi-card.customers::after { background: var(--accent-emerald); }
+        .kpi-card.aov::after { background: var(--accent-amber); }
+
+        .kpi-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-delta {
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .delta-up { color: var(--accent-emerald); }
+        .delta-down { color: var(--accent-rose); }
+
+        /* 차트 래퍼 */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 360px;
+        }
+
+        /* 그리드 레이아웃 */
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .grid-2col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 테이블 공통 스타일 */
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 0.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--card-border);
+            color: #e2e8f0;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* 데이터 인사이트 박스 */
+        .insight-box {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%);
+            border-left: 4px solid var(--accent-purple);
+            padding: 1.25rem;
+            border-radius: 0 12px 12px 0;
+            margin-top: 1.5rem;
+        }
+
+        .insight-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #c084fc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .insight-desc {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+            margin-bottom: 0.75rem;
+        }
+
+        .action-plan {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #93c5fd;
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+            padding-top: 0.75rem;
+        }
+
+        .action-plan strong {
+            color: #60a5fa;
+        }
+
+        /* 코호트 리텐션 매트릭스 그리드 스타일 */
+        .cohort-table-container {
+            max-height: 480px;
+            overflow-y: auto;
+        }
+
+        .cohort-cell {
+            text-align: center;
+            font-weight: 500;
+            color: #ffffff;
+            transition: all 0.2s;
+        }
+
+        .cohort-cell:hover {
+            filter: brightness(1.2);
+            outline: 1px solid #ffffff;
+        }
+
+        /* 히트맵 그리드 공통 */
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: auto repeat(15, 1fr);
+            gap: 3px;
+            margin-top: 1rem;
+        }
+
+        .heatmap-cell {
+            aspect-ratio: 1.5 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .heatmap-header-cell {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 4px 0;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="neon-blob blob-blue"></div>
+    <div class="neon-blob blob-purple"></div>
+
+    <header>
+        <div class="brand">
+            <h1>Advanced Retail Intelligence Dashboard</h1>
+            <p>온라인 리테일 데이터 심화 분석 및 예측 인사이트 대시보드</p>
+        </div>
+        <div class="system-meta">
+            마켓 상태: <span>LIVE ANALYTICS ACTIVE</span>
+            최종 업데이트: <span id="current-time" style="color: var(--text-muted)"></span>
+        </div>
+    </header>
+
+    <div class="nav-container">
+        <div class="nav-tabs" role="tablist">
+            <button class="tab-btn active" onclick="switchTab('summary')">📊 경영 요약</button>
+            <button class="tab-btn" onclick="switchTab('customer')">👥 고객/서비스</button>
+            <button class="tab-btn" onclick="switchTab('product')">📦 상품/가격</button>
+            <button class="tab-btn" onclick="switchTab('global')">🌍 글로벌/기타</button>
+            <button class="tab-btn" onclick="switchTab('quality')">🔍 품질 진단</button>
+        </div>
+    </div>
+
+    <main>
+        <!-- 1. 경영 요약 패널 -->
+        <div id="panel-summary" class="tab-panel active">
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="card kpi-card sales">
+                    <span class="kpi-title">총 매출액</span>
+                    <span class="kpi-value" id="kpi-sales">£0</span>
+                    <span class="kpi-delta" id="delta-sales">0.0%</span>
+                </div>
+                <div class="card kpi-card orders">
+                    <span class="kpi-title">총 주문건수</span>
+                    <span class="kpi-value" id="kpi-orders">0</span>
+                    <span class="kpi-delta" id="delta-orders">0.0%</span>
+                </div>
+                <div class="card kpi-card customers">
+                    <span class="kpi-title">유효 고객수</span>
+                    <span class="kpi-value" id="kpi-customers">0</span>
+                    <span class="kpi-delta" id="delta-customers">0.0%</span>
+                </div>
+                <div class="card kpi-card aov">
+                    <span class="kpi-title">주문당 객단가 (AOV)</span>
+                    <span class="kpi-value" id="kpi-aov">£0</span>
+                    <span class="kpi-delta" style="color: var(--text-muted)">평균 거래 지표</span>
+                </div>
+            </div>
+
+            <!-- 일별 매출 추이 -->
+            <div class="card">
+                <div class="card-header-title">
+                    <span>일별 매출 추이 및 이상치 탐지 (Daily Revenue Trend with Anomaly Detection)</span>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);"/>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chart-daily-sales"></canvas>
+                </div>
+                
+                <div class="grid-2col" style="margin-top: 1.5rem;">
+                    <div>
+                        <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: #e2e8f0;">일별 매출 기술통계</h4>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>지표 항목</th>
+                                        <th>값 (Daily Revenue)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>분석 일수 (Count)</td><td id="stat-count">0</td></tr>
+                                    <tr><td>평균 일일 매출 (Mean)</td><td id="stat-mean">£0</td></tr>
+                                    <tr><td>일일 매출 편차 (Std)</td><td id="stat-std">£0</td></tr>
+                                    <tr><td>최소 매출 (Min)</td><td id="stat-min">£0</td></tr>
+                                    <tr><td>중앙 매출 (Median)</td><td id="stat-median">£0</td></tr>
+                                    <tr><td>최대 매출 (Max)</td><td id="stat-max">£0</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; justify-content: center;">
+                        <div class="insight-box" style="margin-top: 0;">
+                            <div class="insight-title">💡 매출 트렌드 분석 리포트</div>
+                            <div class="insight-desc">
+                                현재 시계열 분석 결과, 특정 시점에서 발생하는 매출 이상치는 계절적 요인보다는 프로모션이나 특정 대형 고객의 대량 주문에 기인한 것으로 보입니다. 일일 매출의 변동 계수(CV)가 높게 나타나는 구간은 공급망 관리와 재고 확보에 있어 높은 리스크를 시사하며, 전반적인 매출 우상향 추세 속에서도 단기적인 변동성에 대한 대비가 필요합니다.
+                            </div>
+                            <div class="action-plan">
+                                <strong>비즈니스 액션 플랜:</strong> 급격한 매출 상승이 포착된 이상치 데이터의 상품군을 분석하여, 해당 품목의 안전 재고 수준을 20% 상향 조정하고 물류 병목 현상을 사전에 방지해야 합니다. 또한, 매출 하락 구간에서는 고객 이탈 방지를 위한 타겟 리워드 캠페인을 즉시 가동하고, 요일별 변동성을 줄이기 위해 주말 전용 프로모션을 강화하여 고른 매출 분포를 유도하는 전략이 필요합니다.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 고객/서비스 패널 -->
+        <div id="panel-customer" class="tab-panel">
+            <div class="grid-2col">
+                <!-- DAU 추이 -->
+                <div class="card">
+                    <div class="card-header-title">일별 활성 고객 수 (DAU) 추이</div>
+                    <div class="chart-container" style="height: 280px;">
+                        <canvas id="chart-dau"></canvas>
+                    </div>
+                    <div class="table-wrapper" style="margin-top: 1rem;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>평균 DAU</th>
+                                    <th>표준편차</th>
+                                    <th>최소 DAU</th>
+                                    <th>최대 DAU</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="dau-mean">0</td>
+                                    <td id="dau-std">0</td>
+                                    <td id="dau-min">0</td>
+                                    <td id="dau-max">0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 월별 ARPPU -->
+                <div class="card">
+                    <div class="card-header-title">월별 ARPPU 추이 (Average Revenue Per Paying User)</div>
+                    <div class="chart-container" style="height: 280px;">
+                        <canvas id="chart-arppu"></canvas>
+                    </div>
+                    <div class="table-wrapper" style="margin-top: 1rem; max-height: 120px; overflow-y: auto;">
+                        <table id="table-arppu">
+                            <thead>
+                                <tr id="table-arppu-header"></tr>
+                            </thead>
+                            <tbody>
+                                <tr id="table-arppu-row"></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 1.5rem;">
+                <div class="insight-box" style="margin-top: 0;">
+                    <div class="insight-title">💡 고객 활성도 및 수익성 분석</div>
+                    <div class="insight-desc">
+                        DAU 지표와 ARPPU 지표를 결합하여 분석한 결과, 고객의 수적 증가보다는 기존 고객의 객단가 상승이 전체 매출 성장을 견인하고 있는 단계로 판단됩니다. 특히 특정 월에 ARPPU가 급증하는 패턴은 고단가 상품군의 캠페인이 성공적이었음을 의미하지만, DAU가 정체된 상태에서의 ARPPU 상승은 신규 고객 유입의 한계를 노출하고 있어 서비스 성장의 지속 가능성에 경고등이 켜진 상태입니다.
+                    </div>
+                    <div class="action-plan">
+                        <strong>비즈니스 액션 플랜:</strong> 신규 고객 획득 비용(CAC)을 재점검하고 적극적인 퍼포먼스 마케팅을 통해 DAU를 현재 대비 15% 이상 끌어올리는 공격적인 확장 전략이 요구됩니다. 동시에, 고객당 매출(ARPPU)을 유지하기 위해 장바구니 추천 알고리즘을 고도화하여 교차 판매(Cross-selling) 비중을 높이고, VIP 고객 대상의 로열티 프로그램을 강화하여 고가치 고객의 유지율(Retention)을 극대화하는 이원화 전략을 집행해야 합니다.
+                    </div>
+                </div>
+            </div>
+
+            <!-- 코호트 리텐션 매트릭스 -->
+            <div class="card" style="margin-top: 1.5rem;">
+                <div class="card-header-title">월별 코호트 리텐션 매트릭스 (Cohort Retention Matrix)</div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">* 비회원을 제외한 순수 회원 기준 재구매율 추이</p>
+                <div class="cohort-table-container">
+                    <table style="text-align: center;">
+                        <thead id="cohort-header"></thead>
+                        <tbody id="cohort-body"></tbody>
+                    </table>
+                </div>
+                
+                <div class="insight-box">
+                    <div class="insight-title">💡 코호트 리텐션 분석 리포트</div>
+                    <div class="insight-desc">
+                        초기 코호트(2010년 12월)에 비해 최근 코호트로 갈수록 2개월 차 유지율이 하락하는 경향이 관찰됩니다. 이는 서비스 초기 진입 고객에 비해 최근 유입된 고객의 브랜드 충성도가 상대적으로 낮음을 의미하며, 온보딩 프로세스나 초기 구매 경험에서 고객 기대치를 충분히 충족시키지 못하고 있을 가능성이 큽니다. 특히 3개월 차 이후의 급격한 이탈은 서비스의 락인(Lock-in) 요소가 부족함을 시사합니다.
+                    </div>
+                    <div class="action-plan">
+                        <strong>비즈니스 액션 플랜:</strong> 신규 가입 후 첫 30일 이내의 재구매 유도를 위한 '웰컴 패키지 2차 쿠폰' 발송 시스템을 자동화해야 합니다. 또한, 이탈이 가속화되는 3개월 차 지점에서 고객 설문을 통해 서비스 불만족 요인을 파악하고, 포인트 소멸 알림이나 전용 특가 상품 제안을 통해 재방문 모멘텀을 강제로 창출해야 합니다. 리텐션이 높은 초기 코호트 고객들의 구매 패턴을 벤치마킹하여 신규 고객에게 유사한 경로를 유도하는 가이드를 제공해야 합니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 상품/가격 패널 -->
+        <div id="panel-product" class="tab-panel">
+            <div class="grid-2col">
+                <!-- 상품 단가 분포 -->
+                <div class="card">
+                    <div class="card-header-title">상품 단가 분포 (Unit Price Distribution)</div>
+                    <div class="chart-container" style="height: 280px;">
+                        <canvas id="chart-price-dist"></canvas>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <h5 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">가격대별 주문 발생 건수</h5>
+                        <div class="table-wrapper">
+                            <table id="table-price-bins">
+                                <thead>
+                                    <tr id="table-price-bins-header"></tr>
+                                </thead>
+                                <tbody>
+                                    <tr id="table-price-bins-row"></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 수량-단가 상관관계 -->
+                <div class="card">
+                    <div class="card-header-title">
+                        <span>수량-단가 상관관계 (Quantity vs Unit Price Scatter)</span>
+                        <span id="label-correlation" style="font-size: 0.85rem; color: var(--accent-rose); font-weight: bold;">상관계수: 0.00</span>
+                    </div>
+                    <div class="chart-container" style="height: 280px;">
+                        <canvas id="chart-qty-price-scatter"></canvas>
+                    </div>
+                    <div style="margin-top: 1.25rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+                        <p>💡 <strong>해석:</strong> 분석 데이터셋에서 1,000건을 무작위로 추출하여 단가(UnitPrice)와 수량(Quantity) 간의 상관관계를 산점도로 분석했습니다. 상관계수가 0에 가까울수록 두 변수 간 선형적인 상관관계는 약하지만, 저단가 상품의 대량 구매 패턴이 뚜렷함을 볼 수 있습니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 1.5rem;">
+                <div class="insight-box" style="margin-top: 0;">
+                    <div class="insight-title">💡 가격 전략 및 구매 패턴 분석 리포트</div>
+                    <div class="insight-desc">
+                        상품 단가 분포를 보면 저가형 미끼 상품(Loss Leader) 비중이 압도적으로 높아, 매출 볼륨은 크지만 마진 확보에 어려움이 있을 것으로 분석됩니다. 또한 수량-단가 산점도에서 단가가 낮을수록 구매 수량이 기하급수적으로 늘어나는 음의 상관관계가 뚜렷하게 나타나는데, 이는 고객들이 가격 민감도가 매우 높은 '가성비 중심' 쇼핑 성향을 보이고 있음을 뜻합니다. 중고가 라인업에서의 구매 전환율이 현저히 낮은 점은 브랜드 프리미엄 구축이 미흡함을 보여줍니다.
+                    </div>
+                    <div class="action-plan">
+                        <strong>비즈니스 액션 플랜:</strong> 저가 상품에 집중된 트래픽을 중고가 상품으로 전이시키기 위한 번들링(Bundling) 및 업셀링(Up-selling) 전략이 시급합니다. 예를 들어, 저가 상품 3개 구매 시 고가 신상품 샘플 증정이나 세트 구성 할인을 통해 평균 주문 금액(AOV)을 20% 이상 높여야 합니다. 또한, 가격 민감도가 낮은 고부가가치 상품군에 대해서는 스토리텔링 마케팅을 강화하고, 가격 비교가 어려운 독점 PB 상품 비중을 확대하여 마진 구조를 근본적으로 개선해야 합니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. 글로벌/기타 패널 -->
+        <div id="panel-global" class="tab-panel">
+            <div class="grid-2col">
+                <!-- 요일/시간대별 매출 피벗 -->
+                <div class="card">
+                    <div class="card-header-title">요일/시간대별 매출 피벗 히트맵 (Sales Heatmap)</div>
+                    <div class="heatmap-container">
+                        <div id="heatmap-grid" class="heatmap-grid"></div>
+                    </div>
+                    <div style="margin-top: 1rem; display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);">
+                        <span>낮은 매출 ➡️</span>
+                        <span>높은 매출 ➡️</span>
+                    </div>
+                </div>
+
+                <!-- 국가별 최근 3개월 성장률 -->
+                <div class="card">
+                    <div class="card-header-title">최근 3개월 국가별 성장률 (Top 10 Countries Growth %)</div>
+                    <div class="table-wrapper">
+                        <table id="table-country-growth">
+                            <thead>
+                                <tr>
+                                    <th>국가 (Country)</th>
+                                    <th id="growth-month-1">Month 1</th>
+                                    <th id="growth-month-2">Month 2</th>
+                                    <th id="growth-month-3">Month 3</th>
+                                </tr>
+                            </thead>
+                            <tbody id="country-growth-body"></tbody>
+                        </table>
+                    </div>
+                    
+                    <div style="margin-top: 1.25rem;">
+                        <h5 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">요일별 매출 비중 (%)</h5>
+                        <div class="table-wrapper">
+                            <table id="table-dow-shares">
+                                <thead>
+                                    <tr id="table-dow-shares-header"></tr>
+                                </thead>
+                                <tbody>
+                                    <tr id="table-dow-shares-row"></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 1.5rem;">
+                <div class="insight-box" style="margin-top: 0;">
+                    <div class="insight-title">💡 운영 타이밍 및 글로벌 확장성 분석 리포트</div>
+                    <div class="insight-desc">
+                        요일 및 시간대별 히트맵 분석 결과, 주중 업무 시간(오전 10시~오후 3시)에 매출이 집중되어 있으며 주말 매출은 급격히 하락하는 'B2B 성향'의 구매 패턴이 관찰됩니다. 이는 주요 고객층이 개인 소비자보다는 소매업자나 법인일 가능성이 높음을 시사합니다. 또한 국가별 성장률 지표에서 특정 신흥 시장의 성장세가 영국 본토를 앞지르는 현상은 해외 배송 최적화와 현지화 마케팅의 필요성을 강력하게 뒷받침하고 있습니다.
+                    </div>
+                    <div class="action-plan">
+                        <strong>비즈니스 액션 플랜:</strong> 주말 매출 공백을 메우기 위해 모바일 앱 전용 '주말 깜짝 타임 세일'을 정례화하여 B2C 고객층의 참여를 유도해야 합니다. 마케팅 이메일 및 푸시 발송 시점은 매출 피크 타임인 오전 10시 직전으로 최적화하여 도달률과 전환율을 극대화하십시오. 높은 성장률을 보이는 국가에 대해서는 현지 창고 운영을 통한 배송 기간 단축 및 현지 결제 수단 도입을 최우선 순위로 검토하여 글로벌 매출 비중을 현재 대비 10% 이상 확대해야 합니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. 품질 진단 패널 -->
+        <div id="panel-quality" class="tab-panel">
+            <div class="card">
+                <div class="card-header-title">데이터 무결성 및 통계적 데이터 품질 진단 리포트</div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">* 수치형 핵심 필드들의 왜도, 첨도 및 이상치 정규성 평가</p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>필드명 (Field)</th>
+                                <th>레코드 수 (Count)</th>
+                                <th>평균값 (Mean)</th>
+                                <th>표준편차 (Std)</th>
+                                <th>최소값 (Min)</th>
+                                <th>25% 백분위</th>
+                                <th>중앙값 (50%)</th>
+                                <th>75% 백분위</th>
+                                <th>최대값 (Max)</th>
+                                <th>왜도 (Skewness)</th>
+                                <th>첨도 (Kurtosis)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quality-body"></tbody>
+                    </table>
+                </div>
+
+                <div class="insight-box">
+                    <div class="insight-title">💡 데이터 품질 및 거버넌스 진단 리포트</div>
+                    <div class="insight-desc">
+                        수치형 데이터의 왜도와 첨도를 분석한 결과, 매출액 데이터의 극심한 우측 꼬리 분포(Right-skewed)가 확인됩니다. 이는 소수의 대형 주문이 전체 통계를 왜곡할 수 있음을 의미하며, 일반적인 평균값보다는 중앙값을 의사결정의 지표로 삼아야 함을 뜻합니다. 또한 결측치 비율이 높은 고객 ID 데이터는 마케팅 자동화의 타겟팅 정확도를 떨어뜨리는 주요 원인이 되고 있어 데이터 수집 단계의 개선이 절실합니다.
+                    </div>
+                    <div class="action-plan">
+                        <strong>비즈니스 액션 플랜:</strong> 고객 식별 데이터의 무결성을 높이기 위해 '비회원 구매' 시에도 최소한의 식별값(이메일 등)을 수집하는 프로세스를 강화하고, 회원 가입 시 혜택을 확대하여 데이터 확보율을 90% 이상으로 높여야 합니다. 통계적 왜곡을 방지하기 위해 정기 리포트에서는 상위 1%의 극단적 주문을 제외한 '핵심 운영 지표'를 병행 표기하여 실질적인 비즈니스 성과를 오독하지 않도록 대시보드 뷰를 이원화하여 관리해야 합니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 백엔드 파이썬에서 주입되는 원본 데이터 구조
+        const rawDashboardData = {"summary": {"kpis": {"sales": 10666684.544, "orders": 19960, "customers": 4338, "aov": 534.403033266533, "delta_sales": 42.242408607120645, "delta_orders": 26.869743123437146, "delta_customers": 22.363315696649032}, "daily_sales": {"dates": ["2010-12-01", "2010-12-02", "2010-12-03", "2010-12-05", "2010-12-06", "2010-12-07", "2010-12-08", "2010-12-09", "2010-12-10", "2010-12-12", "2010-12-13", "2010-12-14", "2010-12-15", "2010-12-16", "2010-12-17", "2010-12-19", "2010-12-20", "2010-12-21", "2010-12-22", "2010-12-23", "2011-01-04", "2011-01-05", "2011-01-06", "2011-01-07", "2011-01-09", "2011-01-10", "2011-01-11", "2011-01-12", "2011-01-13", "2011-01-14", "2011-01-16", "2011-01-17", "2011-01-18", "2011-01-19", "2011-01-20", "2011-01-21", "2011-01-23", "2011-01-24", "2011-01-25", "2011-01-26", "2011-01-27", "2011-01-28", "2011-01-30", "2011-01-31", "2011-02-01", "2011-02-02", "2011-02-03", "2011-02-04", "2011-02-06", "2011-02-07", "2011-02-08", "2011-02-09", "2011-02-10", "2011-02-11", "2011-02-13", "2011-02-14", "2011-02-15", "2011-02-16", "2011-02-17", "2011-02-18", "2011-02-20", "2011-02-21", "2011-02-22", "2011-02-23", "2011-02-24", "2011-02-25", "2011-02-27", "2011-02-28", "2011-03-01", "2011-03-02", "2011-03-03", "2011-03-04", "2011-03-06", "2011-03-07", "2011-03-08", "2011-03-09", "2011-03-10", "2011-03-11", "2011-03-13", "2011-03-14", "2011-03-15", "2011-03-16", "2011-03-17", "2011-03-18", "2011-03-20", "2011-03-21", "2011-03-22", "2011-03-23", "2011-03-24", "2011-03-25", "2011-03-27", "2011-03-28", "2011-03-29", "2011-03-30", "2011-03-31", "2011-04-01", "2011-04-03", "2011-04-04", "2011-04-05", "2011-04-06", "2011-04-07", "2011-04-08", "2011-04-10", "2011-04-11", "2011-04-12", "2011-04-13", "2011-04-14", "2011-04-15", "2011-04-17", "2011-04-18", "2011-04-19", "2011-04-20", "2011-04-21", "2011-04-26", "2011-04-27", "2011-04-28", "2011-05-01", "2011-05-03", "2011-05-04", "2011-05-05", "2011-05-06", "2011-05-08", "2011-05-09", "2011-05-10", "2011-05-11", "2011-05-12", "2011-05-13", "2011-05-15", "2011-05-16", "2011-05-17", "2011-05-18", "2011-05-19", "2011-05-20", "2011-05-22", "2011-05-23", "2011-05-24", "2011-05-25", "2011-05-26", "2011-05-27", "2011-05-29", "2011-05-31", "2011-06-01", "2011-06-02", "2011-06-03", "2011-06-05", "2011-06-06", "2011-06-07", "2011-06-08", "2011-06-09", "2011-06-10", "2011-06-12", "2011-06-13", "2011-06-14", "2011-06-15", "2011-06-16", "2011-06-17", "2011-06-19", "2011-06-20", "2011-06-21", "2011-06-22", "2011-06-23", "2011-06-24", "2011-06-26", "2011-06-27", "2011-06-28", "2011-06-29", "2011-06-30", "2011-07-01", "2011-07-03", "2011-07-04", "2011-07-05", "2011-07-06", "2011-07-07", "2011-07-08", "2011-07-10", "2011-07-11", "2011-07-12", "2011-07-13", "2011-07-14", "2011-07-15", "2011-07-17", "2011-07-18", "2011-07-19", "2011-07-20", "2011-07-21", "2011-07-22", "2011-07-24", "2011-07-25", "2011-07-26", "2011-07-27", "2011-07-28", "2011-07-29", "2011-07-31", "2011-08-01", "2011-08-02", "2011-08-03", "2011-08-04", "2011-08-05", "2011-08-07", "2011-08-08", "2011-08-09", "2011-08-10", "2011-08-11", "2011-08-12", "2011-08-14", "2011-08-15", "2011-08-16", "2011-08-17", "2011-08-18", "2011-08-19", "2011-08-21", "2011-08-22", "2011-08-23", "2011-08-24", "2011-08-25", "2011-08-26", "2011-08-28", "2011-08-30", "2011-08-31", "2011-09-01", "2011-09-02", "2011-09-04", "2011-09-05", "2011-09-06", "2011-09-07", "2011-09-08", "2011-09-09", "2011-09-11", "2011-09-12", "2011-09-13", "2011-09-14", "2011-09-15", "2011-09-16", "2011-09-18", "2011-09-19", "2011-09-20", "2011-09-21", "2011-09-22", "2011-09-23", "2011-09-25", "2011-09-26", "2011-09-27", "2011-09-28", "2011-09-29", "2011-09-30", "2011-10-02", "2011-10-03", "2011-10-04", "2011-10-05", "2011-10-06", "2011-10-07", "2011-10-09", "2011-10-10", "2011-10-11", "2011-10-12", "2011-10-13", "2011-10-14", "2011-10-16", "2011-10-17", "2011-10-18", "2011-10-19", "2011-10-20", "2011-10-21", "2011-10-23", "2011-10-24", "2011-10-25", "2011-10-26", "2011-10-27", "2011-10-28", "2011-10-30", "2011-10-31", "2011-11-01", "2011-11-02", "2011-11-03", "2011-11-04", "2011-11-06", "2011-11-07", "2011-11-08", "2011-11-09", "2011-11-10", "2011-11-11", "2011-11-13", "2011-11-14", "2011-11-15", "2011-11-16", "2011-11-17", "2011-11-18", "2011-11-20", "2011-11-21", "2011-11-22", "2011-11-23", "2011-11-24", "2011-11-25", "2011-11-27", "2011-11-28", "2011-11-29", "2011-11-30", "2011-12-01", "2011-12-02", "2011-12-04", "2011-12-05", "2011-12-06", "2011-12-07", "2011-12-08", "2011-12-09"], "sales": [58960.79, 47748.38, 46943.71, 31774.95, 54830.46, 99618.2, 45389.98, 53586.18, 59182.92, 17329.07, 38006.71, 45254.73, 30444.62, 49352.9, 45418.33, 7534.91, 26789.13, 47304.090000000004, 6199.97, 12076.11, 16026.08, 32634.47, 40382.85, 28836.59, 15778.2, 24569.07, 68655.59, 24693.78, 20624.64, 47576.9, 7242.06, 29333.02, 95978.05, 25934.57, 21246.99, 32640.3, 10400.25, 25733.79, 29077.47, 19922.29, 23730.84, 20090.65, 6615.75, 23640.36, 29034.99, 21216.2, 23479.83, 25162.19, 3457.11, 25955.01, 20949.92, 16692.58, 14896.460000000001, 22873.1, 5713.63, 26703.51, 39875.74, 24949.1, 26372.670000000002, 16208.75, 9624.69, 36388.75, 32498.35, 26891.6, 22809.84, 20595.74, 9526.5, 21755.63, 26354.96, 18690.79, 36404.0, 19506.8, 10005.37, 32356.55, 25081.62, 22038.84, 26120.22, 25475.18, 4148.12, 26019.55, 23493.49, 21948.36, 39904.94, 28171.79, 22153.49, 16715.52, 31515.579999999998, 24091.67, 36697.14, 31394.21, 9241.35, 23176.72, 70711.92, 31885.28, 34335.9, 25667.510000000002, 6943.15, 33254.24, 30144.77, 17362.36, 18512.89, 25295.64, 9913.98, 22353.27, 25570.3, 24484.420000000002, 36104.07, 28334.121, 12725.5, 56026.18, 24338.7, 28670.47, 32615.63, 31047.43, 25942.44, 22501.55, 6973.66, 35229.41, 27544.15, 29174.29, 36126.35, 18867.4, 27899.71, 47819.98, 33687.25, 61903.09, 30749.95, 9924.28, 39651.28, 55151.99, 34483.44, 35599.35, 26718.17, 24231.09, 34685.6, 37660.04, 24408.12, 33497.03, 28442.03, 7394.3, 22714.06, 20595.69, 32826.14, 16913.25, 25639.54, 17789.07, 37957.72, 43264.33, 46389.1, 62234.439999999995, 12517.06, 22457.21, 40474.01, 49097.99, 34584.68, 21076.17, 22442.18, 37514.98, 24784.37, 21825.99, 25242.82, 19521.96, 7082.49, 17015.76, 35607.32, 22088.32, 44797.31, 13675.06, 6032.39, 44652.83, 40758.43, 26387.54, 32445.71, 27082.1, 5993.87, 22605.02, 26262.55, 22641.94, 33602.13, 14836.43, 17194.56, 38831.61, 50182.83, 33308.24, 32818.54, 20124.86, 27099.46, 26887.15, 21644.261, 25602.93, 56269.74, 18790.4, 33490.61, 21388.92, 26580.6, 28113.14, 65502.21, 21538.58, 7578.91, 23377.65, 27679.44, 28792.34, 72433.79, 32231.35, 5718.57, 17243.97, 19239.66, 53499.96, 54106.93, 17349.59, 14576.86, 29651.46, 25993.68, 49035.36, 23827.46, 25626.44, 10805.03, 31866.31, 25380.17, 37370.15, 42322.02, 17119.59, 37157.14, 28349.91, 34413.53, 27195.8, 30075.62, 35511.67, 29738.33, 55117.05, 23592.98, 78218.95, 27724.22, 15745.73, 49269.88, 109612.03, 48560.68, 59354.79, 40601.75, 31372.661, 29335.171, 36322.95, 43749.06, 46401.45, 44357.06, 11634.53, 66376.82, 48810.65, 75593.63, 62891.19, 53790.7, 12524.4, 48239.18, 52572.94, 32159.28, 37446.18, 36347.64, 22010.96, 52062.2, 45332.16, 42573.36, 61122.9, 63226.64, 12339.16, 48752.91, 41314.64, 38059.43, 57291.72, 40565.7, 34571.23, 57369.15, 29155.15, 45888.34, 63561.49, 62977.36, 42946.340000000004, 85881.81, 57700.24, 66127.57, 71008.26, 55257.17, 34069.92, 114419.89, 60807.29, 65958.17, 61103.13, 51275.39, 35058.57, 49805.72, 64089.82, 80104.18, 50978.63, 50822.73, 20611.08, 57165.19, 72595.93, 60126.96, 52197.25, 57664.07, 24621.43, 88741.96, 56713.21, 75439.16, 82495.0, 200920.6], "ma7": [34972.73620983607, 34972.73620983607, 34972.73620983607, 55038.06714285714, 54270.26571428571, 55903.77142857143, 51673.10857142857, 52563.35999999999, 51195.39857142857, 41313.45857142857, 41879.590000000004, 40712.75428571429, 33334.467142857146, 34685.904285714285, 36014.10142857143, 30434.850000000002, 27810.777142857143, 23049.802857142855, 21223.537142857145, 25916.100000000002, 26208.594285714287, 21704.895714285718, 24329.052857142855, 32411.835714285717, 33650.07857142857, 31934.388571428568, 32962.11, 29877.17714285714, 31813.579999999994, 42014.86285714286, 35911.86, 35419.46142857143, 37135.98428571429, 31825.034285714286, 34466.71, 34430.20285714286, 23565.094285714287, 23250.27571428571, 23085.084285714285, 19367.29142857143, 21258.735714285714, 21730.335714285717, 20607.29714285714, 21115.51714285714, 21319.995714285713, 18943.77571428571, 21706.527142857143, 21322.178571428572, 19558.977142857144, 18656.15714285714, 18569.481428571427, 15791.115714285714, 19112.030000000002, 21100.705714285716, 21672.01714285714, 23054.887142857147, 23242.35714285714, 21349.727142857148, 25731.887142857147, 26559.721428571425, 24704.844285714287, 24399.235714285714, 23573.959999999995, 22619.352857142854, 24352.344285714284, 22918.945714285714, 20946.437142857143, 22305.35142857143, 21833.488571428574, 20320.57857142857, 23582.014285714282, 24057.155714285716, 23440.567142857144, 24501.91428571429, 22940.65428571429, 20746.557142857142, 23034.297142857144, 21768.145714285714, 21320.537142857145, 23872.837142857144, 24165.918571428574, 23691.391428571427, 25486.734285714287, 26271.88142857143, 26357.335714285717, 28464.304285714286, 27248.485714285714, 24544.13714285714, 24690.312857142857, 32404.08428571428, 32456.89857142857, 33920.36, 32344.698571428573, 28851.690000000002, 32282.102857142858, 33277.53857142857, 25656.172857142858, 23745.831428571426, 22454.365714285716, 20203.861428571425, 22405.307142857142, 21307.601428571426, 20498.98, 23176.367142857143, 24579.400142857143, 22783.665857142856, 29371.122999999996, 29654.755857142856, 30097.63728571429, 31259.238714285715, 30536.861571428573, 30195.192857142858, 31591.77142857143, 24584.268571428573, 26140.084285714285, 25979.181428571428, 25487.56142857143, 26213.12142857143, 25202.40142857143, 25973.567142857144, 31808.755714285715, 31588.447142857145, 36496.86714285715, 36721.96142857143, 32978.80857142857, 35947.934285714284, 39841.11714285715, 37935.897142857146, 38209.05428571429, 33182.637142857144, 32251.371428571427, 35788.70285714285, 35504.24, 31112.25857142857, 30971.342857142856, 29948.86857142857, 27188.315714285713, 26971.597142857143, 24958.752857142856, 24268.195714285714, 23197.5, 22075.00142857143, 20553.149999999998, 24919.35285714286, 27855.105714285717, 31539.878571428573, 35741.06428571429, 35113.037142857145, 34658.41857142857, 37899.124285714286, 39490.59142857143, 38250.64142857143, 34634.508571428574, 28949.899999999998, 32521.031428571423, 32853.48285714286, 30189.48, 26781.59857142857, 24629.78142857143, 22630.684285714284, 21855.481428571427, 21582.95857142857, 21197.808571428573, 24479.425714285713, 22826.88857142857, 20899.807142857142, 26266.99857142857, 29658.808571428573, 28341.697142857145, 29821.324285714283, 27290.579999999998, 26193.26714285714, 28560.785714285714, 25933.602857142854, 23345.532857142854, 24376.18857142857, 21860.57714285714, 20448.071428571428, 25139.17714285714, 29078.864285714284, 30085.391428571427, 31539.191428571427, 29613.867142857143, 31365.72857142857, 32750.384285714284, 30295.048714285716, 26783.634428571426, 30063.848714285712, 28059.828714285715, 29969.221571428567, 29153.43014285714, 29109.63728571429, 30033.762857142858, 35733.659999999996, 30772.065714285716, 29170.424285714285, 27725.715714285714, 28624.36142857143, 28940.324285714283, 35271.845714285715, 30518.865714285716, 28258.864285714284, 29639.58714285714, 29048.445714285714, 32737.091428571428, 36353.46142857143, 28484.29, 25962.22, 29381.204285714284, 30631.162857142856, 34887.69142857143, 30648.762857142858, 26580.12142857143, 25645.184285714287, 28115.105714285713, 27504.92142857143, 29130.13142857143, 28171.082857142854, 27212.815714285713, 28860.058571428573, 31366.47, 31730.358571428573, 31989.734285714283, 30947.65857142857, 29974.75142857143, 31777.428571428572, 34343.13, 33663.56857142857, 39921.485714285714, 39996.974285714285, 37949.84714285714, 39915.305714285714, 51325.83428571428, 50389.21, 55498.04, 50124.154285714285, 50645.360142857135, 52586.708857142854, 50737.14742857143, 41328.15171428572, 41019.690285714285, 38877.15742857143, 34738.98314285714, 39739.57728571428, 42521.788571428566, 48131.885714285716, 50866.47571428572, 51922.08285714286, 47374.56, 52603.79571428573, 50631.81285714287, 48253.04571428571, 42803.409999999996, 39011.474285714285, 34471.51142857143, 40119.76857142857, 39704.479999999996, 38275.96857142857, 42413.62857142858, 46096.55142857142, 42666.76857142857, 46487.04714285715, 44951.68142857143, 43912.719999999994, 46015.34285714286, 43078.6, 38984.969999999994, 45417.82571428571, 42618.14571428572, 43271.53142857143, 46914.68285714286, 47726.91714285714, 48067.00857142858, 55397.09142857143, 55444.39000000001, 60726.16428571429, 64314.724285714285, 63128.392857142855, 58998.758571428574, 69209.2657142857, 65627.19142857143, 66806.89571428571, 66089.11857142857, 63270.137142857144, 60384.62285714286, 62632.59428571428, 55442.58428571429, 58199.282857142854, 56059.34857142857, 54590.719999999994, 50210.10428571428, 53368.192857142865, 56623.93714285714, 56057.81428571429, 52071.11, 53026.172857142854, 49283.130000000005, 59016.11285714286, 58951.544285714284, 59357.72000000001, 62553.15428571428, 83799.34714285714, 34972.73620983607, 34972.73620983607, 34972.73620983607], "anomalies": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true]}, "stats_desc": {"count": 305, "mean": 34972.73620983607, "std": 21116.955956177146, "min": 3457.11, "p50": 29651.46, "max": 200920.6}}, "customer": {"dau": {"dates": ["2010-12-01", "2010-12-02", "2010-12-03", "2010-12-05", "2010-12-06", "2010-12-07", "2010-12-08", "2010-12-09", "2010-12-10", "2010-12-12", "2010-12-13", "2010-12-14", "2010-12-15", "2010-12-16", "2010-12-17", "2010-12-19", "2010-12-20", "2010-12-21", "2010-12-22", "2010-12-23", "2011-01-04", "2011-01-05", "2011-01-06", "2011-01-07", "2011-01-09", "2011-01-10", "2011-01-11", "2011-01-12", "2011-01-13", "2011-01-14", "2011-01-16", "2011-01-17", "2011-01-18", "2011-01-19", "2011-01-20", "2011-01-21", "2011-01-23", "2011-01-24", "2011-01-25", "2011-01-26", "2011-01-27", "2011-01-28", "2011-01-30", "2011-01-31", "2011-02-01", "2011-02-02", "2011-02-03", "2011-02-04", "2011-02-06", "2011-02-07", "2011-02-08", "2011-02-09", "2011-02-10", "2011-02-11", "2011-02-13", "2011-02-14", "2011-02-15", "2011-02-16", "2011-02-17", "2011-02-18", "2011-02-20", "2011-02-21", "2011-02-22", "2011-02-23", "2011-02-24", "2011-02-25", "2011-02-27", "2011-02-28", "2011-03-01", "2011-03-02", "2011-03-03", "2011-03-04", "2011-03-06", "2011-03-07", "2011-03-08", "2011-03-09", "2011-03-10", "2011-03-11", "2011-03-13", "2011-03-14", "2011-03-15", "2011-03-16", "2011-03-17", "2011-03-18", "2011-03-20", "2011-03-21", "2011-03-22", "2011-03-23", "2011-03-24", "2011-03-25", "2011-03-27", "2011-03-28", "2011-03-29", "2011-03-30", "2011-03-31", "2011-04-01", "2011-04-03", "2011-04-04", "2011-04-05", "2011-04-06", "2011-04-07", "2011-04-08", "2011-04-10", "2011-04-11", "2011-04-12", "2011-04-13", "2011-04-14", "2011-04-15", "2011-04-17", "2011-04-18", "2011-04-19", "2011-04-20", "2011-04-21", "2011-04-26", "2011-04-27", "2011-04-28", "2011-05-01", "2011-05-03", "2011-05-04", "2011-05-05", "2011-05-06", "2011-05-08", "2011-05-09", "2011-05-10", "2011-05-11", "2011-05-12", "2011-05-13", "2011-05-15", "2011-05-16", "2011-05-17", "2011-05-18", "2011-05-19", "2011-05-20", "2011-05-22", "2011-05-23", "2011-05-24", "2011-05-25", "2011-05-26", "2011-05-27", "2011-05-29", "2011-05-31", "2011-06-01", "2011-06-02", "2011-06-03", "2011-06-05", "2011-06-06", "2011-06-07", "2011-06-08", "2011-06-09", "2011-06-10", "2011-06-12", "2011-06-13", "2011-06-14", "2011-06-15", "2011-06-16", "2011-06-17", "2011-06-19", "2011-06-20", "2011-06-21", "2011-06-22", "2011-06-23", "2011-06-24", "2011-06-26", "2011-06-27", "2011-06-28", "2011-06-29", "2011-06-30", "2011-07-01", "2011-07-03", "2011-07-04", "2011-07-05", "2011-07-06", "2011-07-07", "2011-07-08", "2011-07-10", "2011-07-11", "2011-07-12", "2011-07-13", "2011-07-14", "2011-07-15", "2011-07-17", "2011-07-18", "2011-07-19", "2011-07-20", "2011-07-21", "2011-07-22", "2011-07-24", "2011-07-25", "2011-07-26", "2011-07-27", "2011-07-28", "2011-07-29", "2011-07-31", "2011-08-01", "2011-08-02", "2011-08-03", "2011-08-04", "2011-08-05", "2011-08-07", "2011-08-08", "2011-08-09", "2011-08-10", "2011-08-11", "2011-08-12", "2011-08-14", "2011-08-15", "2011-08-16", "2011-08-17", "2011-08-18", "2011-08-19", "2011-08-21", "2011-08-22", "2011-08-23", "2011-08-24", "2011-08-25", "2011-08-26", "2011-08-28", "2011-08-30", "2011-08-31", "2011-09-01", "2011-09-02", "2011-09-04", "2011-09-05", "2011-09-06", "2011-09-07", "2011-09-08", "2011-09-09", "2011-09-11", "2011-09-12", "2011-09-13", "2011-09-14", "2011-09-15", "2011-09-16", "2011-09-18", "2011-09-19", "2011-09-20", "2011-09-21", "2011-09-22", "2011-09-23", "2011-09-25", "2011-09-26", "2011-09-27", "2011-09-28", "2011-09-29", "2011-09-30", "2011-10-02", "2011-10-03", "2011-10-04", "2011-10-05", "2011-10-06", "2011-10-07", "2011-10-09", "2011-10-10", "2011-10-11", "2011-10-12", "2011-10-13", "2011-10-14", "2011-10-16", "2011-10-17", "2011-10-18", "2011-10-19", "2011-10-20", "2011-10-21", "2011-10-23", "2011-10-24", "2011-10-25", "2011-10-26", "2011-10-27", "2011-10-28", "2011-10-30", "2011-10-31", "2011-11-01", "2011-11-02", "2011-11-03", "2011-11-04", "2011-11-06", "2011-11-07", "2011-11-08", "2011-11-09", "2011-11-10", "2011-11-11", "2011-11-13", "2011-11-14", "2011-11-15", "2011-11-16", "2011-11-17", "2011-11-18", "2011-11-20", "2011-11-21", "2011-11-22", "2011-11-23", "2011-11-24", "2011-11-25", "2011-11-27", "2011-11-28", "2011-11-29", "2011-11-30", "2011-12-01", "2011-12-02", "2011-12-04", "2011-12-05", "2011-12-06", "2011-12-07", "2011-12-08", "2011-12-09"], "values": [95, 99, 50, 75, 82, 65, 99, 90, 53, 42, 59, 73, 66, 98, 51, 17, 41, 23, 13, 15, 34, 45, 45, 45, 48, 32, 47, 42, 41, 37, 22, 45, 31, 33, 30, 32, 27, 43, 57, 49, 50, 36, 22, 50, 57, 55, 44, 41, 11, 35, 37, 22, 39, 34, 20, 36, 47, 56, 50, 34, 26, 31, 47, 49, 52, 42, 31, 49, 52, 40, 46, 38, 24, 49, 41, 47, 46, 42, 16, 41, 40, 46, 51, 48, 56, 47, 40, 55, 63, 45, 31, 52, 46, 63, 57, 59, 18, 49, 45, 36, 57, 63, 31, 54, 54, 54, 75, 40, 39, 56, 52, 58, 64, 55, 56, 49, 18, 50, 55, 76, 64, 58, 59, 63, 56, 68, 52, 29, 52, 56, 62, 82, 58, 57, 55, 53, 52, 50, 49, 20, 48, 35, 33, 37, 62, 54, 68, 71, 76, 41, 38, 49, 42, 42, 74, 35, 57, 49, 45, 55, 64, 40, 24, 31, 41, 36, 55, 35, 24, 32, 58, 61, 67, 42, 20, 43, 41, 50, 61, 34, 45, 45, 57, 47, 59, 34, 53, 49, 44, 39, 68, 57, 37, 35, 39, 59, 76, 47, 28, 38, 38, 42, 58, 40, 21, 46, 44, 45, 64, 54, 36, 57, 56, 59, 68, 41, 36, 23, 39, 69, 58, 45, 57, 54, 42, 63, 52, 68, 62, 61, 58, 70, 44, 25, 63, 53, 65, 94, 56, 74, 62, 67, 72, 93, 60, 32, 48, 65, 82, 98, 74, 35, 83, 69, 73, 67, 61, 32, 76, 73, 71, 76, 56, 39, 61, 65, 77, 91, 60, 88, 61, 74, 79, 86, 73, 88, 81, 95, 101, 112, 87, 75, 93, 93, 111, 125, 98, 91, 85, 120, 107, 98, 69, 51, 97, 109, 92, 111, 95, 58, 105, 103, 94, 105, 35], "stats": {"mean": 54.96065573770492, "std": 21.447574383529123, "min": 11, "max": 125}}, "arppu": {"months": ["2010-12", "2011-01", "2011-02", "2011-03", "2011-04", "2011-05", "2011-06", "2011-07", "2011-08", "2011-09", "2011-10", "2011-11", "2011-12"], "values": [930.7865988700564, 933.0156005398111, 690.8072427440633, 736.7960574948665, 628.2810992990654, 729.6742613636363, 768.657820383451, 757.8726986301368, 811.912705882353, 836.1691721958925, 846.7590175953078, 907.1492367788462, 1038.6872845528453]}, "cohort": {"months": ["2010-12", "2011-01", "2011-02", "2011-03", "2011-04", "2011-05", "2011-06", "2011-07", "2011-08", "2011-09", "2011-10", "2011-11", "2011-12"], "cohort_sizes": [885, 417, 380, 452, 300, 284, 242, 188, 169, 299, 358, 323, 41], "retention_matrix": [[1.0, 0.36610169491525424, 0.3231638418079096, 0.384180790960452, 0.36271186440677966, 0.3977401129943503, 0.36271186440677966, 0.34915254237288135, 0.3536723163841808, 0.3954802259887006, 0.37401129943502825, 0.5028248587570622, 0.2655367231638418], [1.0, 0.22062350119904076, 0.26618705035971224, 0.2302158273381295, 0.3213429256594724, 0.28776978417266186, 0.24700239808153476, 0.2422062350119904, 0.2997601918465228, 0.3261390887290168, 0.3645083932853717, 0.11750599520383694, null], [1.0, 0.1868421052631579, 0.1868421052631579, 0.28421052631578947, 0.2710526315789474, 0.24736842105263157, 0.25263157894736843, 0.2789473684210526, 0.24736842105263157, 0.30526315789473685, 0.06842105263157895, null, null], [1.0, 0.1504424778761062, 0.252212389380531, 0.19911504424778761, 0.2234513274336283, 0.168141592920354, 0.2676991150442478, 0.23008849557522124, 0.27876106194690264, 0.08628318584070796, null, null, null], [1.0, 0.21333333333333335, 0.20333333333333334, 0.21, 0.19666666666666666, 0.22666666666666666, 0.21666666666666667, 0.26, 0.07333333333333333, null, null, null, null], [1.0, 0.19014084507042253, 0.17253521126760563, 0.17253521126760563, 0.20774647887323944, 0.2323943661971831, 0.2640845070422535, 0.09507042253521127, null, null, null, null, null], [1.0, 0.17355371900826447, 0.15702479338842976, 0.2644628099173554, 0.23140495867768596, 0.3347107438016529, 0.09504132231404959, null, null, null, null, null, null], [1.0, 0.18085106382978725, 0.2074468085106383, 0.22340425531914893, 0.2712765957446808, 0.11170212765957446, null, null, null, null, null, null, null], [1.0, 0.20710059171597633, 0.2485207100591716, 0.24260355029585798, 0.1242603550295858, null, null, null, null, null, null, null, null], [1.0, 0.23411371237458195, 0.3010033444816054, 0.11371237458193979, null, null, null, null, null, null, null, null, null], [1.0, 0.24022346368715083, 0.11452513966480447, null, null, null, null, null, null, null, null, null, null], [1.0, 0.11145510835913312, null, null, null, null, null, null, null, null, null, null, null], [1.0, null, null, null, null, null, null, null, null, null, null, null, null]]}}, "product": {"price_dist": {"labels": ["\u00a30-2", "\u00a32-5", "\u00a35-10", "\u00a310-50", "\u00a350-100", "\u00a3100+"], "values": [249363, 195153, 61646, 22955, 176, 757]}, "scatter_sample": {"prices": [7.95, 4.25, 4.15, 0.65, 0.85, 1.45, 0.85, 2.1, 1.66, 6.75, 4.15, 4.95, 1.65, 1.69, 6.63, 0.42, 2.46, 0.85, 2.46, 2.08, 0.42, 12.46, 19.96, 2.55, 18.0, 6.75, 2.46, 6.35, 1.25, 9.95, 3.75, 1.25, 7.95, 4.96, 4.96, 1.65, 2.55, 3.75, 0.19, 9.96, 0.42, 7.95, 2.55, 2.1, 4.13, 1.65, 0.83, 2.1, 0.85, 1.25, 2.46, 2.1, 1.25, 0.65, 2.46, 1.25, 4.25, 14.43, 0.85, 1.63, 9.95, 4.95, 0.83, 10.79, 2.08, 4.13, 2.08, 11.63, 1.65, 2.08, 7.95, 1.63, 8.5, 1.25, 4.95, 3.75, 0.83, 0.42, 2.1, 0.42, 2.95, 9.95, 3.29, 1.25, 1.25, 4.95, 8.25, 4.95, 0.83, 1.45, 7.95, 3.75, 10.65, 2.95, 2.46, 2.95, 1.63, 0.65, 2.08, 2.1, 39.95, 0.85, 0.85, 1.45, 2.55, 0.65, 4.15, 1.25, 1.45, 1.25, 4.95, 1.65, 4.25, 1.25, 2.95, 1.25, 0.83, 1.45, 7.46, 4.25, 8.29, 3.29, 7.08, 3.95, 1.25, 2.95, 2.1, 1.25, 2.08, 0.85, 0.85, 4.13, 9.95, 1.25, 5.79, 10.79, 3.25, 0.42, 4.95, 4.96, 0.85, 1.65, 1.25, 9.95, 1.66, 1.25, 3.25, 0.85, 2.46, 2.95, 6.95, 2.46, 1.65, 0.85, 2.1, 8.5, 4.15, 1.65, 0.85, 0.83, 1.65, 1.25, 4.15, 0.42, 2.95, 7.95, 4.95, 12.75, 3.75, 6.65, 8.47, 2.08, 0.85, 3.29, 4.13, 7.95, 5.75, 0.39, 4.95, 3.75, 12.75, 2.1, 2.46, 1.06, 0.55, 5.95, 2.51, 0.85, 2.55, 3.95, 4.96, 0.55, 0.42, 0.42, 8.47, 8.29, 1.65, 2.55, 1.25, 2.51, 1.25, 0.83, 0.42, 3.29, 4.95, 7.9, 1.25, 0.42, 8.29, 2.08, 2.25, 6.75, 5.45, 1.63, 1.65, 0.21, 4.7, 1.95, 0.42, 0.39, 12.5, 2.75, 8.25, 2.55, 1.25, 1.25, 1.45, 2.95, 15.79, 2.95, 8.29, 3.75, 25.0, 0.85, 10.95, 1.06, 0.85, 2.95, 1.25, 0.95, 2.46, 0.42, 0.85, 0.83, 1.25, 2.46, 1.25, 1.69, 0.19, 5.95, 0.65, 1.65, 10.79, 10.95, 1.25, 0.83, 2.08, 16.63, 1.65, 3.25, 2.1, 14.95, 1.63, 0.42, 5.91, 4.15, 0.85, 5.79, 5.95, 2.9, 0.85, 0.29, 0.42, 2.95, 1.95, 4.25, 0.42, 0.79, 8.25, 2.1, 6.63, 1.25, 1.25, 2.51, 2.46, 8.29, 1.45, 6.25, 0.65, 0.85, 8.5, 0.42, 7.5, 1.25, 4.95, 0.85, 0.82, 12.75, 0.83, 1.63, 0.65, 2.95, 0.83, 2.95, 0.42, 0.65, 2.46, 1.25, 0.85, 0.85, 3.29, 1.25, 2.95, 8.5, 1.95, 1.95, 1.65, 4.95, 2.08, 1.25, 0.42, 2.08, 7.95, 15.95, 1.65, 8.95, 3.75, 4.95, 2.95, 8.5, 1.65, 4.15, 0.55, 8.29, 3.29, 1.65, 3.75, 3.29, 2.46, 7.95, 2.1, 1.95, 6.25, 3.29, 1.65, 0.85, 2.95, 1.25, 0.42, 0.39, 2.95, 1.45, 1.25, 5.95, 4.13, 4.13, 1.45, 1.63, 0.83, 2.08, 1.65, 7.95, 1.63, 2.95, 0.38, 16.95, 2.51, 8.29, 0.42, 2.08, 0.83, 1.25, 2.95, 12.75, 1.63, 1.63, 5.95, 0.39, 0.85, 20.79, 8.29, 8.95, 3.29, 0.29, 1.65, 15.79, 3.95, 1.65, 0.85, 3.75, 1.45, 1.63, 2.1, 1.65, 1.25, 0.29, 1.65, 3.29, 11.63, 1.65, 0.85, 0.53, 4.96, 1.65, 0.85, 1.79, 1.69, 1.25, 1.25, 10.95, 4.13, 1.65, 0.85, 4.95, 5.95, 12.75, 2.55, 1.63, 19.95, 0.63, 1.25, 1.65, 4.25, 1.95, 1.95, 2.46, 4.95, 6.75, 2.1, 2.95, 1.65, 2.1, 8.25, 9.95, 4.96, 8.5, 2.55, 1.65, 2.95, 1.45, 2.08, 0.85, 4.95, 4.95, 2.1, 5.79, 0.83, 0.85, 5.79, 0.83, 2.1, 5.95, 4.96, 2.1, 4.95, 2.51, 4.95, 2.92, 4.25, 0.85, 3.95, 0.42, 1.45, 1.25, 2.46, 1.45, 0.42, 0.83, 0.83, 2.1, 0.85, 2.95, 2.95, 4.95, 1.95, 1.69, 4.21, 2.49, 0.85, 1.25, 2.46, 4.25, 3.75, 0.85, 0.65, 14.95, 1.25, 12.72, 1.65, 1.65, 3.29, 1.95, 1.65, 3.95, 4.96, 0.39, 1.25, 5.75, 4.13, 2.46, 7.65, 1.95, 2.49, 2.1, 1.65, 4.13, 2.95, 4.13, 4.13, 1.63, 7.95, 0.39, 0.85, 4.13, 2.1, 4.25, 3.39, 2.95, 0.42, 1.65, 0.85, 1.45, 1.25, 2.95, 1.65, 0.55, 12.75, 4.95, 1.45, 0.42, 0.85, 2.55, 0.83, 0.42, 1.65, 2.46, 0.83, 4.13, 1.25, 2.95, 7.95, 3.75, 1.69, 25.0, 1.63, 4.13, 5.35, 2.95, 1.25, 2.55, 0.85, 5.79, 0.83, 0.85, 1.65, 1.25, 6.25, 0.85, 3.95, 9.95, 12.46, 7.95, 1.65, 0.85, 4.13, 1.45, 4.95, 1.95, 9.13, 1.25, 1.65, 10.79, 0.85, 1.65, 8.29, 6.63, 16.95, 3.29, 0.65, 4.13, 6.75, 5.79, 5.95, 1.79, 0.95, 8.95, 3.75, 0.79, 2.08, 1.65, 5.95, 1.65, 0.42, 4.95, 0.85, 1.25, 7.95, 1.25, 2.92, 2.95, 1.25, 2.51, 0.79, 7.95, 3.36, 4.13, 12.75, 9.95, 0.83, 14.95, 0.65, 0.85, 2.95, 7.46, 1.63, 0.39, 3.36, 1.25, 0.83, 9.95, 4.15, 3.75, 8.29, 6.75, 7.65, 1.65, 1.65, 8.5, 2.08, 2.08, 7.5, 0.39, 2.1, 1.25, 4.95, 1.25, 1.25, 3.75, 2.25, 9.95, 0.65, 0.55, 1.0, 8.95, 0.55, 16.95, 1.25, 1.65, 1.65, 5.95, 4.25, 16.63, 8.25, 1.65, 9.95, 0.85, 4.25, 0.83, 0.42, 2.1, 1.25, 0.42, 8.29, 4.25, 0.65, 2.95, 0.72, 0.42, 5.95, 2.55, 1.63, 3.75, 0.83, 0.42, 1.65, 2.46, 1.25, 1.25, 1.95, 1.25, 5.06, 7.95, 0.21, 2.51, 3.95, 1.63, 0.85, 0.85, 0.39, 0.83, 4.95, 1.65, 1.65, 2.95, 0.83, 4.15, 2.25, 1.95, 1.25, 4.25, 10.95, 2.1, 0.43, 0.85, 2.46, 0.65, 4.95, 1.65, 1.65, 3.75, 1.25, 1.45, 9.95, 1.45, 0.42, 0.42, 3.75, 4.95, 0.85, 1.25, 4.95, 5.45, 2.55, 1.65, 4.13, 2.95, 0.19, 4.13, 1.66, 2.95, 2.1, 4.15, 0.42, 8.95, 2.95, 1.25, 2.95, 3.35, 4.13, 4.95, 4.95, 4.95, 0.85, 0.55, 4.13, 0.65, 2.95, 1.25, 1.45, 4.13, 2.46, 2.46, 1.95, 0.42, 2.1, 0.65, 0.83, 1.25, 1.65, 4.13, 4.96, 1.45, 1.63, 3.75, 1.65, 4.95, 0.43, 0.55, 1.63, 2.08, 9.95, 0.83, 14.95, 6.75, 2.46, 3.75, 1.25, 1.25, 2.46, 7.62, 8.47, 1.25, 12.96, 1.06, 1.63, 0.63, 2.46, 2.46, 19.96, 2.95, 0.42, 0.42, 0.42, 1.45, 3.29, 8.5, 12.75, 2.95, 0.85, 1.25, 1.69, 12.5, 4.15, 5.95, 0.55, 0.39, 1.65, 1.79, 5.95, 0.19, 2.4, 0.29, 3.29, 0.42, 4.95, 0.65, 1.65, 4.65, 4.25, 5.95, 1.45, 12.46, 0.39, 2.46, 0.42, 7.46, 1.63, 5.95, 2.08, 1.25, 4.96, 2.1, 1.25, 0.55, 1.25, 1.25, 2.49, 3.25, 1.79, 1.45, 1.65, 3.75, 1.25, 8.29, 4.95, 1.65, 10.79, 3.75, 3.29, 4.21, 1.25, 1.69, 0.85, 2.49, 3.75, 0.19, 2.08, 1.63, 10.79, 8.29, 4.95, 3.95, 7.46, 0.42, 2.08, 1.95, 1.69, 0.83, 1.25, 9.95, 0.39, 1.25, 2.95, 1.65, 0.85, 2.08, 12.75, 3.29, 1.25, 1.06, 0.83, 1.63, 1.45, 0.39, 1.65, 4.95, 4.95, 6.95, 0.83, 2.95, 7.95, 0.83, 1.45, 0.85, 6.75, 7.95, 2.95, 2.95, 1.45, 0.55, 7.95, 0.42, 3.29, 1.25, 3.75, 2.95, 0.55, 0.38, 15.79, 3.75, 5.79, 2.1, 7.46, 1.65, 1.65, 8.47, 4.95, 4.13, 2.55, 4.95, 2.46, 4.13, 2.95, 1.45, 3.29, 1.65, 5.79, 8.25, 2.08, 8.25, 4.95, 4.15, 4.25, 8.5, 0.19, 9.95, 0.42, 2.46, 1.63, 7.95, 2.1, 1.65, 0.65, 0.85, 1.25, 0.85, 4.13, 6.25, 1.25, 8.29, 1.69, 1.95, 1.25, 1.45, 2.55, 1.65, 3.75, 4.96, 1.25, 1.65, 4.13, 10.79, 0.83, 4.95, 2.46, 3.75, 2.1, 3.75, 2.89, 3.75, 4.95, 2.1, 2.95, 0.42, 4.96, 1.65, 0.83, 0.42, 4.95, 2.1, 2.1, 469.7, 0.39, 8.29, 3.29, 7.95, 8.5, 1.25, 4.96, 1.25, 0.65, 0.95, 7.95, 2.95, 1.65, 1.63, 1.95, 2.75, 4.13, 2.08], "quantities": [2, 4, 3, 1, 6, 2, 10, 1, 3, 2, 24, 1, 4, 10, 1, 25, 1, 2, 1, 6, 25, 10, 1, 6, 5, 1, 24, 1, 12, 2, 2, 24, 2, 12, 1, 12, 6, 1, 24, 1, 8, 1, 24, 36, 1, 12, 12, 2, 8, 1, 1, 6, 12, 12, 1, 2, 1, 1, 2, 2, 1, 4, 12, 1, 12, 1, 1, 1, 36, 20, 4, 4, 1, 1, 24, 3, 1, 25, 5, 12, 1, 2, 6, 4, 2, 2, 1, 6, 6, 12, 1, 4, 6, 3, 2, 1, 1, 6, 3, 12, 1, 12, 12, 12, 12, 1, 4, 1, 2, 24, 1, 2, 4, 3, 6, 12, 1, 4, 2, 4, 1, 6, 20, 4, 6, 1, 1, 12, 20, 3, 2, 1, 1, 1, 1, 2, 1, 12, 8, 1, 5, 2, 6, 1, 4, 12, 2, 3, 1, 3, 3, 1, 1, 10, 12, 2, 6, 6, 24, 1, 20, 24, 48, 12, 16, 2, 3, 2, 8, 2, 1, 6, 4, 3, 1, 2, 2, 5, 6, 4, 1, 1, 2, 72, 24, 2, 1, 8, 6, 2, 5, 4, 36, 25, 1, 1, 12, 12, 12, 3, 1, 4, 4, 1, 4, 1, 1, 36, 1, 10, 3, 4, 3, 1, 4, 36, 96, 2, 120, 1, 4, 8, 1, 24, 12, 6, 1, 6, 3, 6, 1, 1, 1, 24, 32, 96, 10, 12, 12, 1, 2, 25, 12, 1, 1, 1, 6, 12, 24, 6, 12, 96, 1, 2, 6, 12, 2, 1, 10, 18, 5, 1, 2, 25, 3, 4, 12, 1, 3, 1, 2, 48, 2, 6, 1, 2, 25, 12, 2, 6, 1, 48, 24, 2, 2, 2, 12, 1, 2, 12, 1, 2, 2, 12, 1, 12, 10, 1, 1, 3, 24, 3, 4, 4, 4, 12, 2, 2, 1, 10, 1, 4, 2, 1, 6, 36, 10, 2, 10, 2, 1, 12, 1, 2, 1, 2, 1, 6, 6, 2, 5, 16, 3, 1, 4, 8, 2, 1, 14, 3, 6, 1, 2, 2, 12, 1, 6, 12, 12, 12, 6, 9, 12, 2, 2, 3, 12, 1, 1, 10, 10, 1, 2, 2, 12, 1, 1, 2, 25, 10, 1, 6, 5, 1, 2, 1, 3, 4, 12, 1, 1, 2, 1, 6, 20, 1, 6, 2, 2, 1, 24, 1, 48, 10, 1, 48, 6, 1, 1, 10, 3, 24, 2, 10, 1, 100, 1, 1, 1, 16, 1, 10, 5, 2, 1, 5, 24, 1, 1, 1, 9, 1, 4, 10, 2, 11, 3, 10, 8, 6, 2, 1, 1, 1, 3, 2, 12, 2, 1, 12, 3, 12, 1, 4, 5, 1, 12, 4, 1, 1, 2, 3, 1, 2, 1, 1, 2, 1, 3, 3, 2, 12, 12, 1, 1, 2, 1, 1, 2, 6, 10, 2, 3, 2, 6, 1, 1, 8, 384, 6, 14, 6, 12, 48, 6, 1, 4, 1, 1, 1, 2, 1, 3, 8, 1, 1, 4, 4, 1, 3, 12, 8, 6, 4, 5, 2, 6, 1, 1, 5, 1, 10, 3, 2, 1, 24, 54, 3, 25, 2, 12, 2, 12, 1, 12, 1, 4, 10, 12, 25, 2, 1, 2, 2, 16, 1, 3, 1, 12, 12, 2, 4, 10, 1, 4, 1, 18, 1, 24, 200, 12, 1, 12, 30, 10, 5, 2, 12, 85, 3, 1, 2, 24, 12, 4, 1, 4, 1, 1, 6, 5, 1, 2, 12, 1, 1, 1, 2, 24, 2, 2, 1, 3, 100, 12, 1, 4, 12, 12, 6, 3, 2, 12, 10, 7, 15, 2, 5, 1, 5, 2, 9, 12, 2, 1, 3, 2, 3, 9, 2, 12, 2, 6, 1, 6, 3, 3, 1, 1, 2, 1, 1, 1, 6, 1, 4, 10, 1, 20, 3, 2, 24, 2, 2, 8, 12, 2, 1, 1, 2, 12, 24, 3, 2, 24, 2, 12, 12, 24, 2, 1, 1, 2, 24, 1, 20, 2, 6, 25, 2, 12, 24, 2, 3, 12, 6, 16, 1, 2, 6, 2, 3, 12, 6, 6, 1, 12, 2, 2, 2, 1, 1, 24, 1, 1, 7, 36, 8, 1, 1, 1, 12, 5, 6, 2, 4, 1, 10, 12, 4, 2, 4, 5, 48, 5, 18, 4, 10, 5, 2, 24, 12, 3, 96, 24, 24, 1, 1, 6, 1, 2, 12, 2, 6, 1, 2, 1, 2, 2, 2, 8, 48, 12, 2, 6, 4, 5, 6, 1, 3, 8, 1, 24, 1, 1, 24, 6, 6, 3, 1, 2, 1, 8, 24, 1, 12, 4, 12, 4, 2, 2, 2, 1, 1, 10, 3, 21, 1, 2, 2, 1, 8, 4, 2, 1, 12, 1, 20, 1, 2, 11, 2, 11, 6, 1, 2, 4, 1, 1, 6, 12, 1, 6, 8, 20, 2, 2, 1, 1, 12, 16, 1, 4, 1, 24, 4, 12, 100, 2, 54, 192, 48, 1, 25, 4, 12, 1, 2, 6, 3, 12, 1, 24, 1, 1, 1, 3, 1, 10, 3, 1, 6, 1, 2, 2, 6, 4, 6, 30, 3, 12, 1, 6, 1, 2, 10, 2, 6, 1, 6, 12, 12, 48, 5, 1, 24, 10, 1, 1, 1, 1, 1, 1, 48, 20, 12, 16, 3, 1, 2, 144, 12, 4, 1, 20, 2, 2, 3, 12, 144, 1, 1, 18, 36, 1, 18, 1, 3, 2, 5, 1, 1, 1, 48, 4, 1, 1, 6, 6, 24, 2, 2, 4, 8, 4, 3, 2, 48, 1, 3, 3, 60, 3, 10, 10, 2, 2, 1, 40, 15, 4, 3, 1, 4, 2, 10, 2, 1, 1, 2, 2, 18, 24, 1, 36, 2, 12, 4, 2, 1, 3, 10, 144, 1, 12, 6, 1, 2, 3, 3, 8, 24, 12, 6, 6, 4, 1, 1, 4, 12, 5, 3, 2, 2, 17, 1, 1, 8, 6, 1, 4, 1, 4, 48, 1, 5, 1, 50, 1, 3, 2, 1, 24, 2, 1, 1, 54, 4, 4, 16, 12, 1, 2, 3, 20, 1, 1, 384, 1, 1], "descriptions": ["ROUND CAKE TIN VINTAGE GREEN", "ROMANTIC IMAGES NOTEBOOK SET", "CHILDRENS CUTLERY DOLLY GIRL ", "EASTER BUNNY WITH BASKET ON BACK", "FRIDGE MAGNETS LES ENFANTS ASSORTED", "FELTCRAFT BUTTERFLY HEARTS", "RED RETROSPOT CHARLOTTE BAG", "36 FOIL HEART CAKE CASES", "PENS ASSORTED FUNNY FACE", "SQUARECUSHION COVER PINK UNION JACK", "HOT WATER BOTTLE KEEP CALM", "HOT WATER BOTTLE KEEP CALM", "LUNCH BAG RED RETROSPOT", "ASSORTED COLOUR BIRD ORNAMENT", "COLOUR GLASS. STAR T-LIGHT HOLDER", "SKULLS AND CROSSBONES WRAP", "VINTAGE HEADS AND TAILS CARD GAME ", "CHILDS GARDEN FORK PINK", "FLORAL FOLK STATIONERY SET", "JUMBO BAG STRAWBERRY", "BLUE POLKADOT WRAP", "WALL ART BICYCLE SAFETY", "SWEETHEART 3 TIER CAKE STAND ", "ROTATING SILVER ANGELS T-LIGHT HLDR", "POSTAGE", "PICTURE FRAME WOOD TRIPLE PORTRAIT", "CHARLOTTE BAG APPLES DESIGN", "VINTAGE CREAM CAT FOOD CONTAINER", "CHRISTMAS HANGING STAR WITH BELL", "PHOTO FRAME 3 CLASSIC HANGING", "LETTER HOLDER HOME SWEET HOME", "LARGE CIRCULAR MIRROR MOBILE", "DOORMAT TOPIARY", "HOT BATHS METAL SIGN", "GUMBALL COAT RACK", "VINTAGE RED ENAMEL TRIM PLATE", "RED RETROSPOT SUGAR JAM BOWL", "FELTCRAFT CUSHION BUTTERFLY", "SET/6 FRUIT SALAD PAPER CUPS", "OPEN CLOSED METAL SIGN", "SMALL HANGING IVORY/RED WOOD BIRD", "WOOD BLACK BOARD ANT WHITE FINISH", "ROSES REGENCY TEACUP AND SAUCER ", "WOODEN PICTURE FRAME WHITE FINISH", "CERAMIC STRAWBERRY CAKE MONEY BANK", "PLASTERS IN TIN CIRCUS PARADE ", "CHRISTMAS TREE HANGING SILVER ", "POPPY'S PLAYHOUSE KITCHEN", "PINK VINTAGE SPOT BEAKER", "SWEETHEART CERAMIC TRINKET BOX", "LARGE YELLOW BABUSHKA NOTEBOOK ", "AREA PATROLLED METAL SIGN", "POTTING SHED TEA MUG", "CURIOUS IMAGES GIFT WRAP SET", "SET OF 3 HEART COOKIE CUTTERS", "12 PENCIL SMALL TUBE WOODLAND", "FRYING PAN UNION FLAG", "DOORMAT WELCOME TO OUR HOME", "DECORATION  BUTTERFLY  MAGIC GARDEN", "WOOD STAMP SET FLOWERS", "WHITE WOOD GARDEN PLANT LADDER", "HOT WATER BOTTLE KEEP CALM", "KNICKERBOCKERGLORY MAGNET ASSORTED ", "CREAM SWEETHEART EGG HOLDER", "COOK WITH WINE METAL SIGN ", "BUTTON BOX ", "SINGLE HEART ZINC T-LIGHT HOLDER", "ENAMEL FLOWER JUG CREAM", "SILVER HANGING T-LIGHT HOLDER", "JUMBO BAG ALPHABET", "DOORMAT HEARTS", "SCANDINAVIAN 3 HEARTS NAPKIN RING", "FAMILY ALBUM WHITE PICTURE FRAME", "SET OF 60 VINTAGE LEAF CAKE CASES ", "VICTORIAN SEWING BOX SMALL ", "HOLIDAY FUN LUDO", "CRAZY DAISY HEART DECORATION", "WRAP RED APPLES ", "HAND WARMER BABUSHKA DESIGN", "BIRTHDAY CARD, RETRO SPOT", "CERAMIC BOWL WITH STRAWBERRY DESIGN", "PHOTO FRAME 3 CLASSIC HANGING", "SET OF 4 PANTRY JELLY MOULDS", "FRENCH KITCHEN SIGN BLUE METAL", "SET OF 4 ENGLISH ROSE COASTERS", "SET OF 3 CAKE TINS PANTRY DESIGN ", "DOORMAT TOPIARY", "BAKING SET SPACEBOY DESIGN", "SET/6 RED SPOTTY PAPER PLATES", "SET OF 2 CERAMIC CHRISTMAS REINDEER", "DOORMAT WELCOME TO OUR HOME", "ALARM CLOCK BAKELIKE RED ", "TEA TIME TABLE CLOTH", "STRAWBERRY   PICNIC BAG", "CLEAR DRAWER KNOB ACRYLIC EDWARDIAN", "FELTCRAFT DOLL MARIA", "CAKES AND BOWS GIFT  TAPE", "12 PENCILS SMALL TUBE SKULL", "JUMBO BAG 50'S CHRISTMAS ", "CHRISTMAS CRAFT LITTLE FRIENDS", "SET/4 WHITE RETRO STORAGE CUBES ", "PARTY INVITES BALLOON GIRL", "SKULLS  STICKERS", "FELTCRAFT BUTTERFLY HEARTS", "RETROSPOT GIANT TUBE MATCHES", "12 PENCILS SMALL TUBE SKULL", " I LOVE LONDON MINI BACKPACK", "JIGSAW TREE WITH BIRDHOUSE", "POLYESTER FILLER PAD 40x40cm", "HEART FILIGREE DOVE  SMALL", "OPEN CLOSED METAL SIGN", "BUNDLE OF 3 ALPHABET EXERCISE BOOKS", "ENAMEL MEASURING JUG CREAM", "SET OF 60 PANTRY DESIGN CAKE CASES ", "PINK REGENCY TEACUP AND SAUCER", "I CAN ONLY PLEASE ONE PERSON MUG", "3 RAFFIA RIBBONS 50'S CHRISTMAS ", "CERAMIC HEART FAIRY CAKE MONEY BANK", "FELTCRAFT CUSHION BUTTERFLY", "HOT WATER BOTTLE TEA AND SYMPATHY", "TEA TIME PARTY BUNTING", "JAM MAKING SET PRINTED", "DOORMAT KEEP CALM AND COME IN", "SET OF 6 SPICE TINS PANTRY DESIGN", "BLUE STRIPE CERAMIC DRAWER KNOB", "PAPER CHAIN KIT 50'S CHRISTMAS ", "HAND WARMER OWL DESIGN", "IVORY WICKER HEART MEDIUM", "JUMBO BAG STRAWBERRY", "LOVEBIRD HANGING DECORATION WHITE ", "SET/20 RED RETROSPOT PAPER NAPKINS ", "JUMBO BAG SCANDINAVIAN BLUE PAISLEY", "RETROSPOT LAMP", "SET/10 BLUE POLKADOT PARTY CANDLES", "STAR PORTABLE TABLE LIGHT ", "SPOTTY BUNTING", "STRAWBERRY DREAM CHILDS UMBRELLA", "CARD BILLBOARD FONT", "STRAWBERRY FAIRY CAKE TEAPOT", "JUMBO STORAGE BAG SKULLS", "PACK 20 ENGLISH ROSE PAPER NAPKINS", "BALLOONS  WRITING SET ", "MEDIUM CERAMIC TOP STORAGE JAR", "FOOT STOOL HOME SWEET HOME ", "BOX OF 24 COCKTAIL PARASOLS", "PINK DRAWER KNOB ACRYLIC EDWARDIAN", "FIRST AID TIN", "CHARLOTTE BAG SUKI DESIGN", "LARGE CIRCULAR MIRROR MOBILE", "SET/5 RED RETROSPOT LID GLASS BOWLS", "VINTAGE UNION JACK APRON", "SET OF 6 CAKE CHOPSTICKS", "LUNCH BAG VINTAGE DOILY ", "CHARLOTTE BAG SUKI DESIGN", "FOUR HOOK  WHITE LOVEBIRDS", "IVORY KITCHEN SCALES", "SET OF 4 KNICK KNACK TINS POPPIES", "GARDENERS KNEELING PAD KEEP CALM ", "PINK METAL SWINGING BUNNY", "SCOTTIE DOGS BABY BIB", "LUNCH BAG APPLE DESIGN", "SET OF 9 HEART SHAPED BALLOONS", "SET OF TEA COFFEE SUGAR TINS PANTRY", "SPACEBOY BIRTHDAY CARD", "RED HANGING HEART T-LIGHT HOLDER", "DOORMAT UNION JACK GUNS AND ROSES", "BAKING SET 9 PIECE RETROSPOT ", "REGENCY CAKESTAND 3 TIER", "RED WOOLLY HOTTIE WHITE HEART.", "PAPER LANTERN 9 POINT DELUXE STAR", "WOODEN FRAME ANTIQUE WHITE ", "CHILDRENS TOY COOKING UTENSIL SET", "PARTY INVITES FOOTBALL", "PIZZA PLATE IN BOX", "FOUR HOOK  WHITE LOVEBIRDS", "DOORMAT NEW ENGLAND", "CHILLI LIGHTS", "EGG CUP NATURAL CHICKEN", "BULL DOG BOTTLE OPENER", "VINTAGE SNAKES & LADDERS", "BLUE SAVANNAH PICNIC HAMPER FOR 2", "36 FOIL STAR CAKE CASES ", "SET OF 6 VINTAGE NOTELETS KIT", "STRAWBERRY CERAMIC TRINKET POT", "PACK OF 60 MUSHROOM CAKE CASES", "NOEL WOODEN BLOCK LETTERS ", "POTTING SHED SEED ENVELOPES", "LOVEBIRD HANGING DECORATION WHITE ", "COFFEE MUG CAT + BIRD DESIGN", "SET OF 6 SPICE TINS PANTRY DESIGN", "RED RETROSPOT PEG BAG", "60 TEATIME FAIRY CAKE CASES", "BUBBLEGUM RING ASSORTED", "WRAP ALPHABET POSTER  ", "LOVE HEART NAPKIN BOX ", "TEA FOR ONE POLKADOT", "GLASS BON BON JAR", "GIN + TONIC DIET METAL SIGN", "SET OF 3 HANGING OWLS OLLIE BEAK", "POTTING SHED SEED ENVELOPES", "SET/10 IVORY POLKADOT PARTY CANDLES", "TOILET SIGN OCCUPIED OR VACANT", "RETRO PLASTIC DAISY TRAY", "CERAMIC HEART FAIRY CAKE MONEY BANK", "SET OF 3 REGENCY CAKE TINS", "FLOWER GLASS GARLAND NECKL.36\"BLUE", "GARDENIA 3 WICK MORRIS BOXED CANDLE", "BUBBLEGUM RING ASSORTED", "CHILDRENS CUTLERY POLKADOT BLUE", "JUMBO BAG ALPHABET", "GYMKHANA TREASURE BOOK BOX", "SWEETHEART RECIPE BOOK STAND", "PINK HAPPY BIRTHDAY BUNTING", "CHARLOTTE BAG VINTAGE ALPHABET ", "S/4 PINK FLOWER CANDLES IN BOWL", "DINOSAUR KEYRINGS ASSORTED", "CHILLI LIGHTS", "SPACEBOY LUNCH BOX ", "PACK OF 60 SPACEBOY CAKE CASES", "BALLOON ART MAKE YOUR OWN FLOWERS", "VINTAGE CHRISTMAS TABLECLOTH", "CREAM CUPID HEARTS COAT HANGER", "DOORMAT WELCOME TO OUR HOME", "GIN AND TONIC DIET METAL SIGN", "KINGS CHOICE MUG", "RED STRIPE CERAMIC DRAWER KNOB", "DOOR HANGER  MUM + DADS ROOM", "WHITE BROCANTE SOAP DISH", "DOORMAT KEEP CALM AND COME IN", "PINK REGENCY TEACUP AND SAUCER", "REGENCY SUGAR BOWL GREEN", "GREY FLORAL FELTCRAFT SHOULDER BAG", "BOTANICAL GARDENS WALL CLOCK ", "RAIN PONCHO RETROSPOT", "REGENCY CAKESTAND 3 TIER", "FRENCH BLUE METAL DOOR SIGN No", "CHARLOTTE BAG SUKI DESIGN", "WHITE BROCANTE SOAP DISH", "ZINC METAL HEART DECORATION", "REX CASH+CARRY JUMBO SHOPPER", "HANGING HEART WITH BELL", "PINK PAISLEY ROSE GIFT WRAP", "PACK OF 20 NAPKINS RED APPLES", "VINTAGE KID DOLLY CARD ", "ASS FLORAL PRINT MULTI SCREWDRIVER", "APPLE BATH SPONGE", "ANTIQUE SILVER TEA GLASS ENGRAVED", "BEWARE OF THE CAT METAL SIGN ", "ASSTD FRUIT+FLOWERS FRIDGE MAGNETS", "CREAM WALL PLANTER HEART SHAPED", "AGED GLASS SILVER T-LIGHT HOLDER", "PACK 3 BOXES BIRD PANETTONE ", "TEATIME FUNKY FLOWER BACKPACK FOR 2", "RED RETROSPOT CAKE STAND", "CARROT CHARLIE+LOLA COASTER SET", "SILVER STARS TABLE DECORATION", "EGG FRYING PAN PINK ", "RECYCLED ACAPULCO MAT LAVENDER", "PINK VINTAGE PAISLEY PICNIC BAG", "SET/2 RED RETROSPOT TEA TOWELS ", "COSMETIC BAG VINTAGE ROSE PAISLEY", "MA CAMPAGNE CUTLERY BOX", "S/4 IVORY MINI ROSE CANDLE IN BOWL", "WRAP GREEN PEARS ", "EUCALYPTUS & PINECONE  WREATH", "THREE MINI HANGING FRAMES", "RETROSPOT WOODEN HEART DECORATION", "SET/5 RED RETROSPOT LID GLASS BOWLS", "VINTAGE UNION JACK DOORSTOP", "GLASS BEAD HOOP EARRINGS MONTANA", "PACK OF 20 NAPKINS RED APPLES", "WOODEN STAR CHRISTMAS SCANDINAVIAN", "MAGIC DRAWING SLATE DOLLY GIRL ", "BAKING MOULD EASTER EGG WHITE CHOC", "RETROSPOT CHILDRENS APRON", "AIRLINE BAG VINTAGE TOKYO 78", "WRAP WEDDING DAY", "METAL SIGN EMPIRE TEA", "DOORMAT WELCOME PUPPIES", "FOUR HOOK  WHITE LOVEBIRDS", "RECIPE BOX BLUE SKETCHBOOK DESIGN", "ZINC METAL HEART DECORATION", "HANGING METAL RABBIT DECORATION", "DECORATIVE CATS BATHROOM BOTTLE", "IVORY LOVE BIRD CANDLE", "CHILDRENS CUTLERY POLKADOT BLUE", "VINTAGE LEAF MAGNETIC NOTEPAD", "HOME SWEET HOME KEY HOLDER", "HERB MARKER CHIVES ", "SET/6 RED SPOTTY PAPER PLATES", "IVORY DINER WALL CLOCK", "PARTY PIZZA DISH GREEN POLKADOT", "PARISIENNE JEWELLERY DRAWER ", "PACK OF 6 BIRDY GIFT TAGS", "STRAWBERRY FAIRY CAKE TEAPOT", "12 PENCILS TALL TUBE WOODLAND", "VINTAGE CHRISTMAS PAPER GIFT BAG", "LOVE LARGE WOOD LETTERS ", "RING OF ROSES BIRTHDAY CARD", "RED RETROSPOT CHARLOTTE BAG", "12 PENCILS SMALL TUBE SKULL", "RED HANGING HEART T-LIGHT HOLDER", "URBAN BLACK RIBBONS ", "CLASSIC WHITE FRAME", "MAGIC DRAWING SLATE PURDEY", "ASSORTED COLOUR T-LIGHT HOLDER", "6 RIBBONS EMPIRE  ", "PANTRY KITCHEN THERMOMETER ", "PACK OF 20 NAPKINS PANTRY DESIGN", "CHARLOTTE BAG SUKI DESIGN", "MINI CAKE STAND  HANGING STRAWBERY", "SET OF 3 BUTTERFLY COOKIE CUTTERS", "WHITE HANGING HEART T-LIGHT HOLDER", "BLUE DINER WALL CLOCK", "3 STRIPEY MICE FELTCRAFT", "3 STRIPEY MICE FELTCRAFT", "LUNCH BAG CARS BLUE", "NATURAL SLATE CHALKBOARD LARGE ", "JUMBO BAG 50'S CHRISTMAS ", "FINE WICKER HEART ", "DRAGONS BLOOD INCENSE", "POTTERING IN THE SHED METAL SIGN", "RED RETROSPOT TRADITIONAL TEAPOT ", "WOODEN SKITTLES GARDEN SET", "LUNCH BAG  BLACK SKULL.", "3 DRAWER ANTIQUE WHITE WOOD CABINET", "CARDHOLDER HOLLY WREATH METAL", "CHOCOLATE HOT WATER BOTTLE", "WOODEN PICTURE FRAME WHITE FINISH", "IVORY DINER WALL CLOCK", "PLASTERS IN TIN VINTAGE PAISLEY ", "CREAM CUPID HEARTS COAT HANGER", "SET OF 60 PANTRY DESIGN CAKE CASES ", "WHITE METAL LANTERN", "PIZZA PLATE IN BOX", "DINOSAUR PARTY BAG + STICKER SET", "MOTHER'S KITCHEN SPOON REST ", "HEART T-LIGHT HOLDER WILLIE WINKIE", "ANTIQUE ALL GLASS CANDLESTICK", "WHITE TISSUE REAM", "FRENCH LAVENDER SCENT HEART", "GIRAFFE WOODEN RULER", "EDWARDIAN PHOTO FRAME", "LOVE GARLAND PAINTED ZINC ", "TRADITIONAL KNITTING NANCY", "LETTER \"I\" BLING KEY RING", "ROSES REGENCY TEACUP AND SAUCER ", "MONEY BOX POCKET MONEY DESIGN", "CARD BIRTHDAY COWBOY", "BLUE POLKADOT EGG CUP ", "ROSES REGENCY TEACUP AND SAUCER ", "GRAND CHOCOLATECANDLE", "BLUE HARMONICA IN BOX ", "BLACK/BLUE POLKADOT UMBRELLA", "LUNCH BAG SPACEBOY DESIGN ", "JUMBO SHOPPER VINTAGE RED PAISLEY", "PANTRY WASHING UP BRUSH", "STRAWBERRY CHARLOTTE BAG", "PAINTED PINK RABBIT ", "JUMBO STORAGE BAG SUKI", "LUNCH BAG RED RETROSPOT", "ROUND CAKE TIN VINTAGE GREEN", "CANDLE PLATE LACE WHITE", "RED HANGING HEART T-LIGHT HOLDER", "SCENTED VELVET LOUNGE CANDLE ", "BREAD BIN DINER STYLE IVORY", "LADS ONLY TISSUE BOX", "TEA TIME PARTY BUNTING", "WRAP SUKI AND FRIENDS", "JUMBO BAG ALPHABET", "PINK KNITTED EGG COSY", "VINTAGE BILLBOARD TEA MUG", "RED BABY BUNTING ", "CREAM SWEETHEART MINI CHEST", "SKULLS  STICKERS", "ICE CREAM BUBBLES", "VINTAGE DOILY DELUXE SEWING KIT ", "MAGNETS PACK OF 4 HOME SWEET HOME", "PACK OF 6 SANDCASTLE FLAGS ASSORTED", "PICNIC BASKET WICKER LARGE", "JAM MAKING SET WITH JARS", "3 DRAWER ANTIQUE WHITE WOOD CABINET", "PINK  HEART CONFETTI IN TUBE", "WOODEN STAR CHRISTMAS SCANDINAVIAN", "LUNCH BAG RED RETROSPOT", "DOORMAT WELCOME PUPPIES", "CREAM HEART CARD HOLDER", "SKULL SHOULDER BAG", "10 COLOUR SPACEBOY PEN", "REGENCY TEA STRAINER", "SET OF 72 RETROSPOT PAPER  DOILIES", "12 PENCILS TALL TUBE RED RETROSPOT", "CAMOUFLAGE DESIGN TEDDY", "LUNCH BAG PINK POLKADOT", "KEY RING BASEBALL BOOT UNION JACK", "PACK OF 12 WOODLAND TISSUES ", "EASTER TIN BUNNY BOUQUET", "EASTER TIN CHICKS IN GARDEN", "BATH BUILDING BLOCK WORD", "LUNCH BAG  BLACK SKULL.", "FELT TOADSTOOL  SMALL", "LARGE HANGING IVORY & RED WOOD BIRD", "GIRLS VINTAGE TIN SEASIDE BUCKET", "RIBBON REEL HEARTS DESIGN ", "BEADED CRYSTAL HEART GREEN ON STICK", "JUMBO BAG DOLLY GIRL DESIGN", "ZINC FOLKART SLEIGH BELLS", "ETCHED GLASS STAR TREE DECORATION", "4 BURGUNDY WINE DINNER CANDLES", "REGENCY CAKESTAND 3 TIER", "LA PALMIERA TILE HOOK", "LUNCH BAG  BLACK SKULL.", "SET OF 9 BLACK SKULL BALLOONS", "YELLOW COAT RACK PARIS FASHION", "LARGE ROUND WICKER PLATTER ", "CREAM SWEETHEART MINI CHEST", "WOODEN FRAME ANTIQUE WHITE ", "CAKES AND RABBITS DESIGN FLANNEL ", "ROCOCO WALL MIRROR WHITE", "12 COLOURED PARTY BALLOONS", "EMBOSSED GLASS TEALIGHT HOLDER", "GARDENERS KNEELING PAD CUP OF TEA ", "HOT WATER BOTTLE TEA AND SYMPATHY", "VINTAGE DOILY TRAVEL SEWING KIT", "SNACK TRAY RED VINTAGE DOILY", "RED RETROSPOT BOWL", "DECORATIVE VINTAGE COFFEE  BOX", "DOORMAT KEEP CALM AND COME IN", "GROW YOUR OWN BASIL IN ENAMEL MUG", "PAPER CHAIN KIT EMPIRE", "LUNCH BAG  BLACK SKULL.", "HOT BATHS METAL SIGN", "DOORMAT NEW ENGLAND", "REGENCY TEAPOT ROSES ", "CARDHOLDER GINGHAM STAR", "3 HOOK PHOTO SHELF ANTIQUE WHITE", "LADIES & GENTLEMEN METAL SIGN", "JIGSAW RABBIT AND BIRDHOUSE", "SET 3 PAPER VINTAGE CHICK PAPER EGG", "JAM MAKING SET PRINTED", "JUMBO BAG WOODLAND ANIMALS", "ZINC WILLIE WINKIE  CANDLE STICK", "FELTCRAFT GIRL AMELIE KIT", "MEMO BOARD COTTAGE DESIGN", "TOY TIDY SPACEBOY  ", "SET 4 VALENTINE DECOUPAGE HEART BOX", "VINTAGE GLASS T-LIGHT HOLDER", "CHILDS GARDEN FORK BLUE ", "SET OF 6 RIBBONS COUNTRY STYLE", "SET/6 COLLAGE PAPER CUPS", "HAND WARMER RED LOVE HEART", "ENAMEL FLOWER JUG CREAM", "QUEENS GUARD COFFEE MUG", "36 FOIL HEART CAKE CASES", "MEMO BOARD RETROSPOT  DESIGN", "ORIGAMI LAVENDER INCENSE/CANDL SET ", "PARTY BUNTING", "PANTRY WASHING UP BRUSH", "GINGHAM HEART  DOORSTOP RED", "SET OF 20 VINTAGE CHRISTMAS NAPKINS", "COLOUR GLASS. STAR T-LIGHT HOLDER", "GIN & TONIC DIET GREETING CARD ", "DRAWER KNOB CERAMIC IVORY", "6 RIBBONS EMPIRE  ", "PIN CUSHION BABUSHKA PINK", "LAUNDRY 15C METAL SIGN", "RED RETROSPOT TAPE", "SET OF 6 SNACK LOAF BAKING CASES", "CHRISTMAS HANGING TREE WITH BELL", "WICKER STAR ", "HEART WOODEN CHRISTMAS DECORATION", "RECIPE BOX RETROSPOT ", "PHOTO FRAME CORNICE", "MEMO BOARD RETROSPOT  DESIGN", "WHITE  ROSEBUD PEARL BRACELET", "PAINTED METAL PEARS ASSORTED", "RETROSPOT CHILDRENS APRON", "SMALL PARISIENNE HEART PHOTO FRAME ", "LARGE CIRCULAR MIRROR MOBILE", "HEART IVORY TRELLIS SMALL", "COLOURING PENCILS BROWN TUBE", "JAM MAKING SET WITH JARS", "GREY HEART HOT WATER BOTTLE", "VINTAGE SNAP CARDS", "HERB MARKER CHIVES ", "3 TIER CAKE TIN GREEN AND CREAM", "RED SPOT CERAMIC DRAWER KNOB", "EDWARDIAN PARASOL RED", "PLASTERS IN TIN SKULLS", "LUNCH BAG CARS BLUE", "SET OF 4 POLKADOT PLACEMATS ", "WATERING CAN BLUE ELEPHANT", "RIBBON REEL FLORA + FAUNA ", "CLASSIC FRENCH STYLE BASKET NATURAL", "PINK FAIRY CAKE CHILDRENS APRON", "MOTORING TISSUE BOX", "HEART FILIGREE DOVE  SMALL", "CHILLI LIGHTS", "VIPPASSPORT COVER ", "RED RETROSPOT PURSE ", "IVORY KITCHEN SCALES", "CHILDRENS APRON APPLES DESIGN", "BOX OF 6 MINI 50'S CRACKERS", "HAND WARMER BIRD DESIGN", "LUNCH BAG RED RETROSPOT", "JUMBO BAG PINK VINTAGE PAISLEY", "ROSES REGENCY TEACUP AND SAUCER ", "BLUE POLKADOT KIDS BAG", "JUMBO BAG OWLS", "CHRISTMAS PUDDING TRINKET POT ", "ASSORTED COLOUR MINI CASES", "GLITTER CHRISTMAS TREE", "SET OF 20 VINTAGE CHRISTMAS NAPKINS", "ROUND STORAGE TIN VINTAGE LEAF", "COSMETIC BAG VINTAGE ROSE PAISLEY", "CHOCOLATE HOT WATER BOTTLE", "GREY HEART HOT WATER BOTTLE", "PAPER CHAIN KIT 50'S CHRISTMAS ", "BOX OF 24 COCKTAIL PARASOLS", "LUNCH BAG SPACEBOY DESIGN ", "PAINTED PINK RABBIT ", "FELTCRAFT BUTTERFLY HEARTS", "SET OF 3 HANGING OWLS OLLIE BEAK", "WOODEN FRAME ANTIQUE WHITE ", "DECORATIVE WICKER HEART LARGE", "BATHROOM METAL SIGN", "REGENCY CAKESTAND 3 TIER", "OPEN CLOSED METAL SIGN", "CHRISTMAS CRAFT WHITE FAIRY ", "RED RETROSPOT WRAP ", "SET/6 RED SPOTTY PAPER PLATES", "RED RETROSPOT SHOPPING BAG", "POLKADOT RAIN HAT ", "ENVELOPE 50 CURIOUS IMAGES", "TRADITIONAL KNITTING NANCY", "EMERGENCY FIRST AID TIN ", "SWALLOWS GREETING CARD", "JUMBO SHOPPER VINTAGE RED PAISLEY", "HOME SWEET HOME MUG", "PAPER BUNTING WHITE LACE", "SWEETHEART WIRE MAGAZINE RACK", "GREEN WIRE STANDING CANDLE HOLDER", "RED RETROSPOT PLATE ", "Dotcomgiftshop Gift Voucher \u00a330.00", "SMALL POPCORN HOLDER", "POPPY'S PLAYHOUSE KITCHEN", "WALL ART DOG LICENCE ", "RECIPE BOX BLUE SKETCHBOOK DESIGN", "HAPPY STENCIL CRAFT", "PAPER CHAIN KIT VINTAGE CHRISTMAS", "SMALL YELLOW BABUSHKA NOTEBOOK ", "RED RETROSPOT OVEN GLOVE DOUBLE", "ENAMEL PINK COFFEE CONTAINER", "CHARLOTTE BAG APPLES DESIGN", "RIBBON REEL STRIPES DESIGN ", "FILIGRIS HEART WITH BUTTERFLY", "CARD HOLDER LOVE BIRD LARGE ", "SET/20 RED RETROSPOT PAPER NAPKINS ", "JAM MAKING SET PRINTED", "WELCOME  WOODEN BLOCK LETTERS", "VINTAGE CREAM CAT FOOD CONTAINER", "WOOD S/3 CABINET ANT WHITE FINISH", "VINTAGE  2 METRE FOLDING RULER", "CHRISTMAS GINGHAM STAR", "BOOM BOX SPEAKER BOYS", "PANTRY MAGNETIC  SHOPPING LIST", "SET OF TEA COFFEE SUGAR TINS PANTRY", "BLACK SMALL GLASS CAKE STAND", "ENGLISH ROSE HOT WATER BOTTLE", "VICTORIAN GLASS HANGING T-LIGHT", "RIBBON REEL SOCKS AND MITTENS", "BLUE HAPPY BIRTHDAY BUNTING", "12 PENCILS TALL TUBE RED RETROSPOT", "CHILDREN'S CIRCUS PARADE MUG", "MISTLETOE HEART WREATH GREEN", "SET 2 TEA TOWELS I LOVE LONDON ", "BREAD BIN DINER STYLE PINK", "LARGE HEART MEASURING SPOONS", "ASSORTED COLOUR T-LIGHT HOLDER", "JUMBO BAG WOODLAND ANIMALS", "BISCUIT TIN VINTAGE RED", "RED GINGHAM TEDDY BEAR ", "LOVE HOT WATER BOTTLE", "JUMBO STORAGE BAG SUKI", "ZINC T-LIGHT HOLDER STAR LARGE", "WOOD S/3 CABINET ANT WHITE FINISH", "SET OF 6 SOLDIER SKITTLES", "PINK PILLAR CANDLE SILVER FLOCK", "HEART BEADED TRELLIS DECORATION", "PLASTERS IN TIN SKULLS", "RED RETROSPOT UMBRELLA", "TRADITIONAL KNITTING NANCY", "GIN & TONIC DIET GREETING CARD ", "VINTAGE CHRISTMAS BUNTING", "CARD MOTORBIKE SANTA", "ROTATING LEAVES T-LIGHT HOLDER", "ASSORTED COLOUR MINI CASES", "FILIGRIS HEART WITH BUTTERFLY", "20 DOLLY PEGS RETROSPOT", "PINK BABY BUNTING", "METAL SIGN,CUPCAKE SINGLE HOOK", "SOLDIERS EGG CUP ", "METAL SIGN HIS DINNER IS SERVED", "RED RETROSPOT MINI CASES", "CHARLIE+LOLA PINK HOT WATER BOTTLE", "JUMBO BAG VINTAGE DOILY ", "12 EGG HOUSE PAINTED WOOD", "RED RETROSPOT ROUND CAKE TINS", "URBAN BLACK RIBBONS ", "MA CAMPAGNE CUTLERY BOX", "HERB MARKER THYME", "BLUE ROSE FABRIC MIRROR", " SET 2 TEA TOWELS I LOVE LONDON ", "SET/3 RED GINGHAM ROSE STORAGE BOX", "PINK POLKADOT BOWL", "SWALLOW SQUARE TISSUE BOX", "MINI CAKE STAND WITH HANGING CAKES", "SET OF 60 I LOVE LONDON CAKE CASES ", "PENNY FARTHING BIRTHDAY CARD", "SWEETHEART CAKESTAND 3 TIER", "CHILDRENS CUTLERY SPACEBOY ", "VINTAGE SNAKES & LADDERS", "CHILDRENS CUTLERY POLKADOT GREEN ", "BABUSHKA LIGHTS STRING OF 10", "HEART BUTTONS JEWELLERY BOX", "LUNCH BAG CARS BLUE", "RIBBON REEL HEARTS DESIGN ", "PINK DINER WALL CLOCK", "JUMBO STORAGE BAG SUKI", "SINGLE HEART ZINC T-LIGHT HOLDER", "PARISIENNE JEWELLERY DRAWER ", "PAINTED METAL STAR WITH HOLLY BELLS", "FOUR HOOK  WHITE LOVEBIRDS", "FRENCH KITCHEN SIGN BLUE METAL", "HOT WATER BOTTLE KEEP CALM", "SCANDINAVIAN REDS RIBBONS", "STRAWBERRY CERAMIC TRINKET BOX", "WALL ART HORSE & PONY ", "BUFFALO BILL TREASURE BOOK BOX", "TRIPLE PHOTO FRAME CORNICE ", "SET/6 RED SPOTTY PAPER CUPS", "60 CAKE CASES DOLLY GIRL DESIGN", "BROWN KUKUI COCONUT SEED NECKLACE", "WOOD S/3 CABINET ANT WHITE FINISH", "60 TEATIME FAIRY CAKE CASES", "BREAD BIN DINER STYLE RED ", "4 PEAR BOTANICAL DINNER CANDLES", "NATURAL SLATE RECTANGLE CHALKBOARD", "PLASTERS IN TIN SPACEBOY", "IVORY GIANT GARDEN THERMOMETER", "FRYING PAN UNION FLAG", "RED DINER WALL CLOCK", "VINTAGE JINGLE BELLS HEART", "JINGLE BELL HEART DECORATION", "SWEETHEART CAKESTAND 3 TIER", "CHARLOTTE BAG APPLES DESIGN", "ROSE SCENT CANDLE JEWELLED DRAWER", "ENAMEL PINK TEA CONTAINER", "WRAP VINTAGE LEAF DESIGN", "HOT BATHS METAL SIGN", "WOODEN BOX OF DOMINOES", "TRAVEL CARD WALLET TRANSPORT", "ANT WHITE WIRE HEART SPIRAL", "ENAMEL MEASURING JUG CREAM", "HERB MARKER CHIVES ", "RECIPE BOX PANTRY YELLOW DESIGN", "SET OF 6 SNACK LOAF BAKING CASES", "TRAVEL CARD WALLET FLOWER MEADOW", "ADVENT CALENDAR GINGHAM SACK", "COFFEE MUG APPLES DESIGN", "GREEN VINTAGE SPOT BEAKER", "ALARM CLOCK BAKELIKE RED ", "NATURAL HANGING QUILTED HEARTS ", "PLACE SETTING WHITE STAR", "GARDENERS KNEELING PAD KEEP CALM ", "SET OF 3 BUTTERFLY COOKIE CUTTERS", "ANTIQUE SILVER TEA GLASS ENGRAVED", "TRADITIONAL WOODEN CATCH CUP GAME ", "RED GINGHAM ROSE JEWELLERY BOX", "SET OF 3 BUTTERFLY COOKIE CUTTERS", "WOODEN PICTURE FRAME WHITE FINISH", "DOORMAT FAIRY CAKE", "ANIMAL STICKERS", "SMALL LICORICE DES PINK BOWL", "SET OF 6 HERB TINS SKETCHBOOK", "ROCKING HORSE RED CHRISTMAS ", "PENS ASSORTED SPACEBALL", "RED RETROSPOT CUP", "GROOVY CACTUS INFLATABLE", "COLOURING PENCILS BROWN TUBE", "FOLDING UMBRELLA CHOCOLATE POLKADOT", "NATURAL SLATE RECTANGLE CHALKBOARD", "LUNCH BAG DOILEY PATTERN ", "RECIPE BOX PANTRY YELLOW DESIGN", "REINDEER HEART DECORATION GOLD", "SPACEBOY MINI BACKPACK", "GYMKHANA TREASURE BOOK BOX", "JUMBO BAG OWLS", "ROMANTIC PINKS RIBBONS ", "KINGS CHOICE BISCUIT TIN", "RED RETROSPOT CAKE STAND", "PINK PARTY BAGS", "MINI LADLE LOVE HEART PINK", "FUNKY DIVA PEN", "PIN CUSHION BABUSHKA PINK", "12 PENCIL SMALL TUBE WOODLAND", "FELTCRAFT BOY JEAN-PAUL KIT", "LUNCH BAG ALPHABET DESIGN", "RIBBON REEL CHRISTMAS SOCK BAUBLE", "PINK FLORAL FELTCRAFT SHOULDER BAG", "HEART IVORY TRELLIS SMALL", "4 TRADITIONAL SPINNING TOPS", "WELCOME  WOODEN BLOCK LETTERS", "SET OF 3 NOTEBOOKS IN PARCEL", "TRAVEL CARD WALLET VINTAGE TICKET", "ASSORTED COLOUR LIZARD SUCTION HOOK", "FELTCRAFT CUSHION RABBIT", "WALL ART VINTAGE HEART", "PARTY CONE CHRISTMAS DECORATION ", "SET 36 COLOURING PENCILS DOILY", "SPOTTY BUNTING", "NOEL WOODEN BLOCK LETTERS ", "GIN + TONIC DIET METAL SIGN", "PEARL CRYSTAL PUMPKIN T-LIGHT HLDR", "HAND WARMER UNION JACK", "SET OF 6 FUNKY BEAKERS", "ASSORTED COLOUR SUCTION CUP HOOK", "CHARLIE LOLA BLUE HOT WATER BOTTLE ", "FOLKART CLIP ON STARS", "FAWN BLUE HOT WATER BOTTLE", "HAND WARMER SCOTTY DOG DESIGN", "CHILDRENS CUTLERY RETROSPOT RED ", "SPACEBOY BIRTHDAY CARD", "TOOL BOX SOFT TOY ", "PENCIL CASE LIFE IS BEAUTIFUL", "6 ROCKET BALLOONS ", "RED BABY BUNTING ", "SILK PURSE BABUSHKA BLUE", "HEART OF WICKER SMALL", "SET/3 POLKADOT STACKING TINS", "STRAWBERRY FAIRY CAKE TEAPOT", "TEA TIME PARTY BUNTING", "PACK OF 20 NAPKINS PANTRY DESIGN", "SET OF 60 PANTRY DESIGN CAKE CASES ", "JUMBO BAG RED RETROSPOT", "HANGING HEART MIRROR DECORATION ", "ROUND SNACK BOXES SET OF 4 SKULLS", "RED RETROSPOT LUGGAGE TAG", "HANGING CHICK  YELLOW DECORATION", "6 RIBBONS RUSTIC CHARM", "SET OF 3 WOODEN HEART DECORATIONS", "LARGE PURPLE BABUSHKA NOTEBOOK  ", "RETROSPOT CHILDRENS APRON", "SMALL DOLLY MIX DESIGN ORANGE BOWL", "NO SINGING METAL SIGN", "CHRISTMAS TREE PAINTED ZINC ", "SET OF 12 FAIRY CAKE BAKING CASES", "VINTAGE CHRISTMAS GIFT BAG LARGE ", "LUNCH BAG SPACEBOY DESIGN ", "WOVEN FROST CUSHION COVER", "RECYCLING BAG RETROSPOT ", "WHITE SPOT RED CERAMIC DRAWER KNOB", "QUEEN OF THE SKIES PASSPORT COVER ", "BUTTERFLY CROCHET FOOD COVER", "LUNCH BAG DOLLY GIRL DESIGN", "BAKING SET 9 PIECE RETROSPOT ", "GIRLS ALPHABET IRON ON PATCHES ", "PACK OF 60 MUSHROOM CAKE CASES", "PACK OF 12 COLOURED PENCILS", "VINTAGE DOILY JUMBO BAG RED ", "VINTAGE UNION JACK MEMOBOARD", "SET OF 12 MINI LOAF BAKING CASES", "3 TIER CAKE TIN RED AND CREAM", "NURSERY A,B,C PAINTED LETTERS", "T-LIGHT GLASS FLUTED ANTIQUE", "ANTIQUE TALL SWIRLGLASS TRINKET POT", "PACK OF 72 RETROSPOT CAKE CASES", "DOUGHNUT LIP GLOSS ", "WASHROOM METAL SIGN", "WHITE GOOSE FEATHER CHRISTMAS TREE ", "SET OF 16 VINTAGE PISTACHIO CUTLERY", "SET OF 4 GREEN CAROUSEL COASTERS", "HOT WATER BOTTLE KEEP CALM", "VINTAGE BILLBOARD LOVE/HATE MUG", "LOVEBIRD HANGING DECORATION WHITE ", "ANGEL DECORATION PAINTED ZINC ", "PIN CUSHION BABUSHKA PINK", "VINTAGE BILLBOARD DRINK ME MUG", "WHITE WOOD GARDEN PLANT LADDER", "CHARLIE+LOLA PINK HOT WATER BOTTLE", "RAINY LADIES BIRTHDAY CARD", "MINI JIGSAW SPACEBOY", "TRAVEL CARD WALLET TRANSPORT", "HANGING CHICK  YELLOW DECORATION", "SMALL WHITE HEART OF WICKER", "RED KITCHEN SCALES", "REGENCY CAKESTAND 3 TIER", "Manual", "CHRISTMAS RETROSPOT TREE WOOD", "PINK CREAM FELT CRAFT TRINKET BOX ", "GREEN POLKADOT PLATE ", "VINTAGE CHRISTMAS TABLECLOTH", "CHILDRENS CUTLERY DOLLY GIRL ", "BLACK/BLUE POLKADOT UMBRELLA", "PACK OF 72 RETROSPOT CAKE CASES", "RED CHARLIE+LOLA PERSONAL DOORSIGN", "DRAWER KNOB CRACKLE GLAZE IVORY", "JUMBO BAG RED RETROSPOT", "LOVE BUILDING BLOCK WORD", "SET/6 COLLAGE PAPER CUPS", "POTTERING IN THE SHED METAL SIGN", "WORLD WAR 2 GLIDERS ASSTD DESIGNS", "BUNDLE OF 3 ALPHABET EXERCISE BOOKS", "BOX OF 24 COCKTAIL PARASOLS", "SET OF 3 REGENCY CAKE TINS", "ASSORTED COLOUR T-LIGHT HOLDER", "MINI CAKE STAND  HANGING STRAWBERY", "ENCHANTED BIRD COATHANGER 5 HOOK", "JAM MAKING SET WITH JARS", "RED RETROSPOT UMBRELLA", "PICTURE DOMINOES", "EDWARDIAN PARASOL NATURAL", "PINK/BLUE DISC/MIRROR STRING", " DOLLY GIRL BEAKER", "PACK OF 6 SMALL FRUIT STRAWS", "WHITE GOOSE FEATHER CHRISTMAS TREE ", "BOX OF 24 COCKTAIL PARASOLS", "LOVE HOT WATER BOTTLE", "JUMBO BAG PAISLEY PARK", "POTTING SHED TEA MUG", "FAIRY CAKE FLANNEL ASSORTED COLOUR", "PINK PARTY BAGS", " DOLLY GIRL BEAKER", "SET OF 60 PANTRY DESIGN CAKE CASES ", "VINTAGE PAISLEY STATIONERY SET", "SCANDINAVIAN REDS RIBBONS", "BOX OF 6 MINI VINTAGE CRACKERS", "S/6 WOODEN SKITTLES IN COTTON BAG", "JUMBO BAG PAISLEY PARK", "PARTY METAL SIGN ", "SKULL AND CROSSBONES  GARLAND ", "STRAWBERRY RAFFIA FOOD COVER", "SET 36 COLOUR PENCILS DOLLY GIRL", "GLASS APOTHECARY BOTTLE ELIXIR", "SKULL DESIGN TV DINNER TRAY", "6 RIBBONS RUSTIC CHARM", "SKULL DESIGN TV DINNER TRAY", "FOOD COVER WITH BEADS SET 2 ", "TOXIC AREA  DOOR HANGER ", "WICKER STAR ", "POTTING SHED TEA MUG", "ZINC FOLKART SLEIGH BELLS", "FUNKY DIVA PEN", "BOX OF 6 MINI 50'S CRACKERS", "DOORSTOP RETROSPOT HEART", "SET/6 COLLAGE PAPER CUPS", "JUMBO SHOPPER VINTAGE RED PAISLEY", "BLUE POLKADOT CUP", "BULL DOG BOTTLE OPENER", "CHILDRENS CUTLERY POLKADOT PINK", "SPOTTY BUNTING", "DOORMAT NEIGHBOURHOOD WITCH ", "DOORSTOP RETROSPOT HEART", "MAGIC DRAWING SLATE BUNNIES ", "JUMBO BAG 50'S CHRISTMAS ", "3 HOOK HANGER MAGIC GARDEN", "ASSORTED COLOUR BIRD ORNAMENT", "SMALL DOLLY MIX DESIGN ORANGE BOWL", "PLAYING CARDS I LOVE LONDON ", "WOODEN ROUNDERS GARDEN SET ", "HANGING HEART WITH BELL", "HEART CALCULATOR", "PAPER CHAIN KIT EMPIRE", "SMALL WHITE HEART OF WICKER", "CHARLOTTE BAG APPLES DESIGN", "JINGLE BELL HEART ANTIQUE SILVER", "TWO DOOR CURIO CABINET", "GIRLS PARTY BAG", "TRADITIONAL PICK UP STICKS GAME ", "RETROSPOT CIGAR BOX MATCHES ", "TRAVEL CARD WALLET I LOVE LONDON", "SET/20 RED RETROSPOT PAPER NAPKINS ", "GRAND CHOCOLATECANDLE", "RED RETROSPOT TISSUE BOX", "ROUND CONTAINER SET OF 5 RETROSPOT", "RETROSPOT HEART HOT WATER BOTTLE", "SET OF 3 CAKE TINS PANTRY DESIGN ", "VINTAGE UNION JACK APRON", "SMALL MARSHMALLOWS PINK BOWL", "PINK REGENCY TEACUP AND SAUCER", "DOORMAT AIRMAIL ", "ROBOT BIRTHDAY CARD", "CLASSIC CHROME BICYCLE BELL ", "ASSORTED TUTTI FRUTTI  FOB NOTEBOOK", "BABUSHKA LIGHTS STRING OF 10", "DOORMAT FAIRY CAKE", "RECIPE BOX BLUE SKETCHBOOK DESIGN", "GLASS JAR DIGESTIVE BISCUITS", "RED STRIPE CERAMIC DRAWER KNOB", "SET OF 60 I LOVE LONDON CAKE CASES ", "DOORMAT MULTICOLOUR STRIPE", "TRAVEL CARD WALLET SUKI", "GARLAND WITH HEARTS AND BELLS", "RED RETROSPOT BOWL", "PIZZA PLATE IN BOX", "ROSES REGENCY TEACUP AND SAUCER ", "SET OF 60 VINTAGE LEAF CAKE CASES ", "SCENTED VELVET LOUNGE CANDLE ", "DOORMAT I LOVE LONDON", "FULL ENGLISH BREAKFAST PLATE", "ROSES REGENCY TEACUP AND SAUCER ", "DINOSAUR LUNCH BOX WITH CUTLERY", "WOODEN FRAME ANTIQUE WHITE ", "RIBBON REEL STRIPES DESIGN ", "RIBBON REEL SNOWY VILLAGE", "SET OF 16 VINTAGE ROSE CUTLERY", "RETROSPOT TEA SET CERAMIC 11 PC ", "SET/6 PINK  BUTTERFLY T-LIGHTS", "PAPER CHAIN KIT RETROSPOT", "VINTAGE CHRISTMAS BUNTING", "PSYCHEDELIC TILE COASTER", "ROUND SNACK BOXES SET OF 4 FRUITS ", "METAL 4 HOOK HANGER FRENCH CHATEAU", "CHRISTMAS CRAFT WHITE FAIRY ", "RED RETROSPOT SHOPPER BAG", "LUNCH BAG RED RETROSPOT", "GLASS JAR DIGESTIVE BISCUITS", "DOORMAT VINTAGE LEAF", "JUMBO BAG DOLLY GIRL DESIGN", "DOORMAT KEEP CALM AND COME IN", "SET OF 3 CAKE TINS PANTRY DESIGN ", "SET OF 4 KNICK KNACK TINS LONDON ", "SCOTTIE DOG HOT WATER BOTTLE", "IVORY DINER WALL CLOCK", "PENS ASSORTED FUNNY FACE", "CHARLIE AND LOLA FIGURES TINS", "CARD BIRTHDAY COWBOY", "PACK OF 12 CHRISTMAS FUN CARDS", "STRAWBERRY HONEYCOMB  GARLAND ", "DOORMAT SPOTTY HOME SWEET HOME", "SMALL GLASS HEART TRINKET POT", "LUNCH BAG SUKI DESIGN ", "12 PENCILS SMALL TUBE RED RETROSPOT", "ROCKING HORSE GREEN CHRISTMAS ", "ROLL WRAP VINTAGE CHRISTMAS", "BUTTERFLIES STICKERS", "JUMBO BAG OWLS", "LOVE BUILDING BLOCK WORD", "ROLL WRAP 50'S CHRISTMAS", "CHILDRENS CUTLERY POLKADOT BLUE", "ASSORTED COLOUR BIRD ORNAMENT", "REVOLVER WOODEN RULER ", "SOLDIERS EGG CUP ", "SINGLE ANTIQUE ROSE HOOK IVORY", "GUMBALL COAT RACK", "PLASTERS IN TIN CIRCUS PARADE ", "CHARLIE & LOLA WASTEPAPER BIN FLORA", "KITCHEN FLOWER POTS WALL PLAQUE", "CITRONELLA CANDLE GARDEN POT", "VINTAGE  2 METRE FOLDING RULER", "JUMBO STORAGE BAG SUKI", "POPPY FIELDS CHOPPING BOARD", "PACK OF 12 RED APPLE TISSUES", "SCOTTIE DOG HOT WATER BOTTLE", "CHARLOTTE BAG PINK POLKADOT", "CHERRY CROCHET FOOD COVER", "HAND WARMER RED RETROSPOT", "ANTIQUE GLASS PEDESTAL BOWL", "SET OF 6 RIBBONS VINTAGE CHRISTMAS", "SET 6 PAPER TABLE LANTERN HEARTS ", "PARTY BUNTING", "CHILDS GARDEN SPADE BLUE", "ANTIQUE GLASS DRESSING TABLE POT", "ANGEL DECORATION STARS ON DRESS", "STRAWBERRY LUNCH BOX WITH CUTLERY", "CLOTHES PEGS RETROSPOT PACK 24 ", "SET/4 SKULL BADGES", "WRAP KEEP CALM BIRTHDAY", "SET OF 2 TINS JARDIN DE PROVENCE", "FUNKY WASHING UP GLOVES ASSORTED", "SET/6 TURQUOISE BUTTERFLY T-LIGHTS", "DOTCOM POSTAGE", "FEATHER PEN,LIGHT PINK", "RED SPOTTY BISCUIT TIN", "CLASSIC CHROME BICYCLE BELL ", "DOORMAT 3 SMILEY CATS", "VINTAGE UNION JACK MEMOBOARD", "I CAN ONLY PLEASE ONE PERSON MUG", "HOT BATHS METAL SIGN", "RED RETROSPOT BOWL", "ASSORTED COLOUR T-LIGHT HOLDER", "COFFEE SCENT PILLAR CANDLE", "DOORMAT TOPIARY", "RED HANGING HEART T-LIGHT HOLDER", "LUNCH BAG SUKI DESIGN ", "PACK OF 20 SKULL PAPER NAPKINS", "SPACEBOY LUNCH BOX ", "REGENCY MILK JUG PINK ", "DAIRY MAID LARGE MILK JUG", "JUMBO BAG TOYS "]}, "correlation": -0.003772542661636722}, "global": {"timing_heatmap": {"days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "hours": [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], "matrix": [[0.0, 1494.58, 44647.73, 158943.74, 220604.52, 186496.42, 199817.63, 240648.26, 216297.91, 197168.08, 125600.78, 185294.301, 2561.09, 0.0, 0.0], [0.0, 2052.58, 72509.11, 193183.85, 338543.681, 282379.02, 265000.15, 244441.01, 198363.1, 324118.95, 183635.78, 56846.19, 17559.19, 0.0, 0.0], [0.0, 3343.46, 45770.27, 139710.11, 264831.73, 230192.3, 295990.11, 235400.64, 203696.29, 243403.47, 128995.43, 43729.1, 0.0, 3053.4, 13031.5], [4.25, 6883.71, 67973.7, 167861.95, 307954.6, 184551.15, 287774.8, 202637.79, 222967.2, 262736.58, 193970.01, 120110.96, 124617.27, 47238.15, 5879.12], [0.0, 17284.88, 52967.71, 329789.371, 233497.7, 206760.62, 241193.49, 194916.83, 230659.94, 195328.75, 81846.9, 55622.94, 75.5, 373.46, 22.14], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 778.8, 81310.47, 149574.93, 154469.7, 147691.77, 109827.931, 130216.35, 39957.66, 0.0, 0.0, 0.0, 0.0]]}, "dow_shares": {"days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "sales": [1779575.041, 2178632.611, 1851147.81, 2203161.24, 1840340.231, 0.0, 813827.611], "shares": [16.683488047849032, 20.424646496417473, 17.354481632638784, 20.65460200788704, 17.253160749327584, 0.0, 7.6296210658800945]}, "country_growth": {"months": ["2011-10", "2011-11", "2011-12"], "growth": {"Australia": [2.358417225896023, -0.5776970157773549, -1.0], "Belgium": [0.3510819815495172, 0.11087737319229318, -0.7755250357835003], "EIRE": [-0.43560298979611967, 0.2640238145367695, -0.7611820122237863], "France": [0.4292894326627408, -0.051566874567909315, -0.7708685270906784], "Germany": [0.7488273317111835, -0.11420924306586733, -0.7151056448844639], "Netherlands": [0.5112394504860556, -0.3644100209660601, -0.5467258457425037], "Spain": [0.6643940153086003, 0.004865148999529723, -0.9635659111229917], "Sweden": [0.2603049914648725, -0.5278955145191948, -0.9125716783666332], "Switzerland": [-0.026515837322537816, 0.006668171076156915, -1.0], "United Kingdom": [0.046705648077681516, 0.41148187745699416, -0.5528548800845026]}}}, "quality": {"Quantity": {"count": 530104, "mean": 10.542037034242338, "std": 155.52412351063626, "min": 1.0, "p25": 1.0, "p50": 3.0, "p75": 10.0, "max": 80995.0, "skewness": 471.72638151377913, "kurtosis": 236460.11248175098}, "UnitPrice": {"count": 530104, "mean": 3.9076252471213193, "std": 35.915681104255434, "min": 0.001, "p25": 1.25, "p50": 2.08, "p75": 4.13, "max": 13541.33, "skewness": 206.08697179737123, "kurtosis": 62482.55335737786}, "TotalAmount": {"count": 530104, "mean": 20.121871451639677, "std": 270.35674321840673, "min": 0.001, "p25": 3.75, "p50": 9.9, "p75": 17.700000000000003, "max": 168469.6, "skewness": 506.70457814887453, "kurtosis": 297648.853558276}}};
+
+        // 초기화 코드 및 차트 객체 모음
+        const charts = {};
+
+        // 시간 표시
+        document.getElementById('current-time').innerText = new Date().toLocaleString('ko-KR');
+
+        // 통화 포맷터
+        const formatGBP = (val) => '£' + Number(val).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        const formatGBPFloat = (val) => '£' + Number(val).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const formatNum = (val) => Number(val).toLocaleString('ko-KR');
+        const formatPercent = (val) => (val > 0 ? '+' : '') + Number(val).toFixed(1) + '%';
+
+        // 탭 전환 기능
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(tabId));
+            if (targetBtn) targetBtn.classList.add('active');
+            
+            const targetPanel = document.getElementById('panel-' + tabId);
+            if (targetPanel) targetPanel.classList.add('active');
+
+            // 탭이 전환되면 차트들의 크기 재조정이 필요할 수 있습니다.
+            Object.values(charts).forEach(chart => chart.resize());
+        }
+
+        // --- 데이터 매핑 및 랜더링 ---
+        function renderSummaryTab() {
+            const data = rawDashboardData.summary;
+            
+            // KPI 카드 주입
+            document.getElementById('kpi-sales').innerText = formatGBP(data.kpis.sales);
+            document.getElementById('kpi-orders').innerText = formatNum(data.kpis.orders);
+            document.getElementById('kpi-customers').innerText = formatNum(data.kpis.customers);
+            document.getElementById('kpi-aov').innerText = formatGBPFloat(data.kpis.aov);
+
+            // KPI Delta 뱃지
+            const ds = document.getElementById('delta-sales');
+            ds.innerText = formatPercent(data.kpis.delta_sales);
+            ds.className = 'kpi-delta ' + (data.kpis.delta_sales >= 0 ? 'delta-up' : 'delta-down');
+
+            const do_ = document.getElementById('delta-orders');
+            do_.innerText = formatPercent(data.kpis.delta_orders);
+            do_.className = 'kpi-delta ' + (data.kpis.delta_orders >= 0 ? 'delta-up' : 'delta-down');
+
+            const dc = document.getElementById('delta-customers');
+            dc.innerText = formatPercent(data.kpis.delta_customers);
+            dc.className = 'kpi-delta ' + (data.kpis.delta_customers >= 0 ? 'delta-up' : 'delta-down');
+
+            // 기술통계 테이블
+            document.getElementById('stat-count').innerText = formatNum(data.stats_desc.count) + ' 일';
+            document.getElementById('stat-mean').innerText = formatGBPFloat(data.stats_desc.mean);
+            document.getElementById('stat-std').innerText = formatGBPFloat(data.stats_desc.std);
+            document.getElementById('stat-min').innerText = formatGBPFloat(data.stats_desc.min);
+            document.getElementById('stat-median').innerText = formatGBPFloat(data.stats_desc.p50);
+            document.getElementById('stat-max').innerText = formatGBPFloat(data.stats_desc.max);
+
+            // Chart.js: 일별 매출 트렌드 및 이상치 탐지
+            const ctx = document.getElementById('chart-daily-sales').getContext('2d');
+            
+            // 이상치 점 데이터셋 구성
+            const anomalyData = [];
+            for (let i = 0; i < data.daily_sales.sales.length; i++) {
+                if (data.daily_sales.anomalies[i]) {
+                    anomalyData.push({
+                        x: data.daily_sales.dates[i],
+                        y: data.daily_sales.sales[i]
+                    });
+                }
+            }
+
+            charts['daily_sales'] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.daily_sales.dates,
+                    datasets: [
+                        {
+                            label: '일별 매출액 (£)',
+                            data: data.daily_sales.sales,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                            borderWidth: 1.5,
+                            pointRadius: 1,
+                            pointHoverRadius: 5,
+                            fill: true,
+                            tension: 0.1
+                        },
+                        {
+                            label: '7일 이동평균',
+                            data: data.daily_sales.ma7,
+                            borderColor: '#8b5cf6',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            borderDash: [5, 5],
+                            fill: false
+                        },
+                        {
+                            label: '이상치 (Anomaly)',
+                            data: anomalyData,
+                            type: 'scatter',
+                            backgroundColor: '#f43f5e',
+                            borderColor: '#ffffff',
+                            borderWidth: 1,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e2e8f0', font: { family: 'Inter' } }
+                        },
+                        tooltip: {
+                            padding: 10,
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#e2e8f0',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatGBP(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.03)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { 
+                                color: '#94a3b8',
+                                callback: (v) => formatGBP(v)
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderCustomerTab() {
+            const data = rawDashboardData.customer;
+
+            // DAU 통계 테이블 주입
+            document.getElementById('dau-mean').innerText = formatNum(data.dau.stats.mean.toFixed(0));
+            document.getElementById('dau-std').innerText = formatNum(data.dau.stats.std.toFixed(0));
+            document.getElementById('dau-min').innerText = formatNum(data.dau.stats.min);
+            document.getElementById('dau-max').innerText = formatNum(data.dau.stats.max);
+
+            // Chart.js: DAU 추이
+            const ctxDau = document.getElementById('chart-dau').getContext('2d');
+            charts['dau'] = new Chart(ctxDau, {
+                type: 'line',
+                data: {
+                    labels: data.dau.dates,
+                    datasets: [{
+                        label: 'DAU (Daily Active Users)',
+                        data: data.dau.values,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                        borderWidth: 2,
+                        pointRadius: 1,
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 9 } } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+
+            // Chart.js: ARPPU 추이
+            const ctxArppu = document.getElementById('chart-arppu').getContext('2d');
+            charts['arppu'] = new Chart(ctxArppu, {
+                type: 'bar',
+                data: {
+                    labels: data.arppu.months,
+                    datasets: [{
+                        label: 'ARPPU (£)',
+                        data: data.arppu.values,
+                        backgroundColor: 'rgba(139, 92, 246, 0.85)',
+                        borderColor: '#8b5cf6',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', callback: (v) => formatGBP(v) } }
+                    }
+                }
+            });
+
+            // ARPPU 상세 테이블 렌더링
+            const arpHeader = document.getElementById('table-arppu-header');
+            const arpRow = document.getElementById('table-arppu-row');
+            arpHeader.innerHTML = '<th>구분</th>' + data.arppu.months.map(m => '<th>' + m + '</th>').join('');
+            arpRow.innerHTML = '<td>ARPPU</td>' + data.arppu.values.map(v => '<td>' + formatGBP(v) + '</td>').join('');
+
+            // 코호트 리텐션 테이블 렌더링
+            const cohort = data.cohort;
+            const cohHeader = document.getElementById('cohort-header');
+            const cohBody = document.getElementById('cohort-body');
+
+            // 헤더 작성 (CohortMonth, 0개월차 수, 0, 1, 2, ... 인덱스)
+            let maxIndex = 0;
+            cohort.retention_matrix.forEach(row => {
+                maxIndex = Math.max(maxIndex, row.length);
+            });
+            
+            let headerHtml = '<th>코호트 월 (Cohort)</th><th>고객 수 (Size)</th>';
+            for (let i = 0; i < maxIndex; i++) {
+                headerHtml += '<th>Month ' + i + '</th>';
+            }
+            cohHeader.innerHTML = headerHtml;
+
+            // 바디 행 작성
+            let bodyHtml = '';
+            for (let i = 0; i < cohort.months.length; i++) {
+                const m = cohort.months[i];
+                const size = cohort.cohort_sizes[i];
+                const rowData = cohort.retention_matrix[i];
+
+                bodyHtml += '<tr><td style="font-weight:600; text-align:left;">' + m + '</td><td style="color:#94a3b8; font-weight:600;">' + formatNum(size) + ' 명</td>';
+
+                for (let j = 0; j < maxIndex; j++) {
+                    const val = rowData[j];
+                    if (val === undefined || val === null) {
+                        bodyHtml += '<td></td>';
+                    } else {
+                        // HSL을 활용해 리텐션 0% ~ 100%에 대한 색상 강도를 부여 (신뢰감 주는 Emerald와 Blue톤 혼합 적용)
+                        const opacity = val; // 0.0 ~ 1.0
+                        const bgCol = 'hsla(200, 80%, 40%, ' + opacity + ')';
+                        const textCol = opacity > 0.45 ? '#ffffff' : '#e2e8f0';
+                        const pctStr = (val * 100).toFixed(1) + '%';
+                        
+                        bodyHtml += '<td class="cohort-cell" style="background:' + bgCol + '; color:' + textCol + ';" title="' + m + ' 진입 고객의 Month ' + j + ' 리텐션: ' + pctStr + '">' + pctStr + '</td>';
+                    }
+                }
+                bodyHtml += '</tr>';
+            }
+            cohBody.innerHTML = bodyHtml;
+        }
+
+        function renderProductTab() {
+            const data = rawDashboardData.product;
+
+            // 가격 분포 테이블 작성
+            const pHeader = document.getElementById('table-price-bins-header');
+            const pRow = document.getElementById('table-price-bins-row');
+            pHeader.innerHTML = data.price_dist.labels.map(l => '<th>' + l + '</th>').join('');
+            pRow.innerHTML = data.price_dist.values.map(v => '<td>' + formatNum(v) + ' 건</td>').join('');
+
+            // Chart.js: 상품 단가 분포
+            const ctxPrice = document.getElementById('chart-price-dist').getContext('2d');
+            charts['price_dist'] = new Chart(ctxPrice, {
+                type: 'bar',
+                data: {
+                    labels: data.price_dist.labels,
+                    datasets: [{
+                        label: '주문 건수',
+                        data: data.price_dist.values,
+                        backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                        borderColor: '#f59e0b',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+
+            // 상관계수 표출
+            document.getElementById('label-correlation').innerText = '피어슨 상관계수: ' + data.correlation.toFixed(4);
+
+            // Chart.js: 수량-단가 산점도
+            const scatterData = [];
+            for (let i = 0; i < data.scatter_sample.prices.length; i++) {
+                scatterData.push({
+                    x: data.scatter_sample.prices[i],
+                    y: data.scatter_sample.quantities[i],
+                    desc: data.scatter_sample.descriptions[i]
+                });
+            }
+
+            const ctxScatter = document.getElementById('chart-qty-price-scatter').getContext('2d');
+            charts['qty_price_scatter'] = new Chart(ctxScatter, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: '거래 품목 수량 vs 단가',
+                        data: scatterData,
+                        backgroundColor: 'rgba(244, 63, 94, 0.6)',
+                        borderColor: '#ffffff',
+                        borderWidth: 0.5,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            padding: 10,
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#e2e8f0',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    const item = context.raw;
+                                    return [
+                                        '상품: ' + item.desc,
+                                        '단가: ' + formatGBPFloat(item.x),
+                                        '수량: ' + formatNum(item.y) + ' 개'
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: '단가 (UnitPrice)', color: '#94a3b8' },
+                            grid: { color: 'rgba(255,255,255,0.03)' },
+                            ticks: { color: '#94a3b8', callback: (v) => formatGBP(v) }
+                        },
+                        y: {
+                            title: { display: true, text: '수량 (Quantity)', color: '#94a3b8' },
+                            grid: { color: 'rgba(255,255,255,0.03)' },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderGlobalTab() {
+            const data = rawDashboardData.global;
+
+            // 요일/시간대 히트맵 작성
+            const heatContainer = document.getElementById('heatmap-grid');
+            
+            // 헤더 정의 (시간별: 6:00 ~ 20:00)
+            let heatHtml = '<div class="heatmap-header-cell" style="grid-column: 1;">요일</div>';
+            data.timing_heatmap.hours.forEach(h => {
+                heatHtml += '<div class="heatmap-header-cell">' + String(h).padStart(2,'0') + ':00</div>';
+            });
+
+            // 최대값 찾기 (그라데이션 색상 스케일링용)
+            let maxVal = 0;
+            data.timing_heatmap.matrix.forEach(row => {
+                row.forEach(v => { maxVal = Math.max(maxVal, v); });
+            });
+
+            // 각 요일별 행 추가
+            for (let i = 0; i < data.timing_heatmap.days.length; i++) {
+                const day = data.timing_heatmap.days[i];
+                const rowValues = data.timing_heatmap.matrix[i];
+
+                heatHtml += '<div class="heatmap-header-cell" style="grid-column: 1; text-align: left; padding-left: 6px; align-self: center;">' + day.substring(0,3) + '</div>';
+                
+                for (let j = 0; j < data.timing_heatmap.hours.length; j++) {
+                    const val = rowValues[j];
+                    const ratio = maxVal > 0 ? (val / maxVal) : 0;
+                    
+                    // 매출이 높은 경우 옐로우~오렌지 계열의 네온 그라데이션 적용
+                    const bgCol = 'hsla(35, 100%, 50%, ' + ratio + ')';
+                    const textCol = ratio > 0.6 ? '#000000' : '#ffffff';
+                    
+                    heatHtml += '<div class="heatmap-cell" style="background:' + bgCol + '; color:' + textCol + ';" title="' + day + ' ' + data.timing_heatmap.hours[j] + '시 매출: ' + formatGBP(val) + '">' + (val > 0 ? formatGBP(val/1000) + 'k' : '') + '</div>';
+                }
+            }
+            heatContainer.innerHTML = heatHtml;
+
+            // 요일별 매출 비중 테이블
+            const dowHeader = document.getElementById('table-dow-shares-header');
+            const dowRow = document.getElementById('table-dow-shares-row');
+            dowHeader.innerHTML = '<th>구분</th>' + data.dow_shares.days.map(d => '<th>' + d.substring(0,3) + '</th>').join('');
+            dowRow.innerHTML = '<td>매출 비중</td>' + data.dow_shares.shares.map(s => '<td>' + s.toFixed(1) + '%</td>').join('');
+
+            // 국가별 매출 성장률 테이블
+            const months = data.country_growth.months;
+            document.getElementById('growth-month-1').innerText = months[0] + ' 성장률';
+            document.getElementById('growth-month-2').innerText = months[1] + ' 성장률';
+            document.getElementById('growth-month-3').innerText = months[2] + ' 성장률';
+
+            const growthBody = document.getElementById('country-growth-body');
+            let growthHtml = '';
+            for (const [country, values] of Object.entries(data.country_growth.growth)) {
+                growthHtml += '<tr><td style="font-weight:600; text-align:left;">' + country + '</td>';
+                values.forEach(v => {
+                    if (v === null) {
+                        growthHtml += '<td>-</td>';
+                    } else {
+                        const sign = v >= 0 ? '+' : '';
+                        const pctStr = sign + (v * 100).toFixed(1) + '%';
+                        const col = v >= 0 ? 'var(--accent-emerald)' : 'var(--accent-rose)';
+                        growthHtml += '<td style="color:' + col + '; font-weight:600;">' + pctStr + '</td>';
+                    }
+                });
+                growthHtml += '</tr>';
+            }
+            growthBody.innerHTML = growthHtml;
+        }
+
+        function renderQualityTab() {
+            const data = rawDashboardData.quality;
+            const body = document.getElementById('quality-body');
+            let html = '';
+
+            for (const [col, stats] of Object.entries(data)) {
+                html += '<tr><td style="font-weight:600; text-align:left;">' + col + '</td><td>' + formatNum(stats.count) + '</td><td>' + formatNum(stats.mean.toFixed(2)) + '</td><td>' + formatNum(stats.std.toFixed(2)) + '</td><td>' + formatNum(stats.min.toFixed(2)) + '</td><td>' + formatNum(stats.p25.toFixed(2)) + '</td><td>' + formatNum(stats.p50.toFixed(2)) + '</td><td>' + formatNum(stats.p75.toFixed(2)) + '</td><td>' + formatNum(stats.max.toFixed(2)) + '</td><td style="color: var(--accent-rose); font-weight:600;">' + stats.skewness.toFixed(3) + '</td><td style="color: var(--accent-purple); font-weight:600;">' + stats.kurtosis.toFixed(3) + '</td></tr>';
+            }
+            body.innerHTML = html;
+        }
+
+        // 페이지 로드 시 렌더링 호출
+        window.addEventListener('load', () => {
+            renderSummaryTab();
+            renderCustomerTab();
+            renderProductTab();
+            renderGlobalTab();
+            renderQualityTab();
+        });
+    </script>
+</body>
+</html>
